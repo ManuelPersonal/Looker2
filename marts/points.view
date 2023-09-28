@@ -1,0 +1,36 @@
+include: "./base.view.lkml"
+
+view: points {
+
+  extends: [base]
+
+  measure: accumulated_points{
+    hidden: yes
+    type: sum
+    sql: ${mn_points_rewarded} ;;
+    filters: [kn_transaction_type: "10", kn_status: "0"]
+  }
+
+  measure: total_accumulated_points {
+    type: number
+    sql: ${accumulated_points} ;;
+  }
+
+  measure: redeemed_points{
+    hidden: yes
+    type: sum
+    sql: ${mn_points_redeemed} ;;
+    filters: [kn_transaction_type: "4,45", kn_status: "0"]
+  }
+
+  measure: total_redeemed_points {
+    type: number
+    sql: ${redeemed_points} ;;
+  }
+
+  measure: convertion_points {
+    type: number
+    sql: ROUND(SAFE_DIVIDE(${total_redeemed_points}, ${total_accumulated_points}), 2) ;;
+  }
+
+}
