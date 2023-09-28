@@ -1,0 +1,135 @@
+# FACTS
+include: "/estrella/marts/behavior.view.lkml"
+include: "/estrella/marts/investment.view.lkml"
+include: "/estrella/marts/spend.view.lkml"
+include: "/estrella/marts/investment.view.lkml"
+include: "/estrella/marts/users.view.lkml"
+
+# DIMENSIONS
+include: "/estrella/dimensions/enrollment_member.view.lkml"
+include: "/estrella/dimensions/enrollment_type.view.lkml"
+include: "/estrella/dimensions/geographic_area.view.lkml"
+include: "/estrella/dimensions/member.view.lkml"
+include: "/estrella/dimensions/member_balance.view.lkml"
+include: "/estrella/dimensions/member_card_type.view.lkml"
+include: "/estrella/dimensions/movement_type.view.lkml"
+include: "/estrella/dimensions/offer.view.lkml"
+include: "/estrella/dimensions/product.view.lkml"
+include: "/estrella/dimensions/sponsor.view.lkml"
+include: "/estrella/dimensions/store.view.lkml"
+include: "/estrella/dimensions/time.view.lkml"
+include: "/estrella/dimensions/transaction_category.view.lkml"
+include: "/estrella/dimensions/transaction_status.view.lkml"
+include: "/estrella/dimensions/transaction_type.view.lkml"
+include: "/estrella/dimensions/gender.view.lkml"
+
+connection: "darwin"
+
+explore: behavior {
+  sql_always_where: DATE(${behavior.created_ts_raw}) >= DATE("2023-02-01") ;;
+  join: tt {
+    fields: []
+    from: transaction_type
+    sql_on: ${behavior.kn_transaction_type} = ${tt.kn_transaction_type} ;;
+    type: inner
+    relationship: many_to_one
+  }
+
+  join: ts {
+    fields: []
+    from: transaction_status
+    sql_on: ${behavior.kn_status} = ${ts.kn_transaction_status} ;;
+    type: inner
+    relationship: many_to_one
+  }
+
+  join: m {
+    from: member
+    fields: []
+    sql_on: ${behavior.kx_member_id} = ${m.kx_member_id} ;;
+    type: left_outer
+    relationship: many_to_one
+  }
+
+  join: g {
+    from: gender
+    fields: []
+    sql_on: ${m.kn_gender} = ${g.kn_gender} ;;
+    type: left_outer
+    relationship: one_to_one
+  }
+}
+
+explore: investment {
+  sql_always_where: DATE(${investment.created_ts_raw}) >= DATE("2023-02-01") ;;
+  join: tt {
+    fields: []
+    from: transaction_type
+    sql_on: ${investment.kn_transaction_type} = ${tt.kn_transaction_type} ;;
+    type: inner
+    relationship: many_to_one
+  }
+
+  join: ts {
+    fields: []
+    from: transaction_status
+    sql_on: ${investment.kn_status} = ${ts.kn_transaction_status} ;;
+    type: inner
+    relationship: many_to_one
+  }
+
+  join: m {
+    from: member
+    fields: []
+    sql_on: ${investment.kx_member_id} = ${m.kx_member_id} ;;
+    type: left_outer
+    relationship: many_to_one
+  }
+
+  join: g {
+    from: gender
+    fields: []
+    sql_on: ${m.kn_gender} = ${g.kn_gender} ;;
+    type: left_outer
+    relationship: one_to_one
+  }
+}
+
+explore: spend {
+  sql_always_where: DATE(${spend.created_ts_raw}) >= DATE("2023-02-01") ;;
+  join: tt {
+    fields: []
+    from: transaction_type
+    sql_on: ${spend.kn_transaction_type} = ${tt.kn_transaction_type} ;;
+    type: inner
+    relationship: many_to_one
+  }
+
+  join: ts {
+    fields: []
+    from: transaction_status
+    sql_on: ${spend.kn_status} = ${ts.kn_transaction_status} ;;
+    type: inner
+    relationship: many_to_one
+  }
+
+  join: m {
+    from: member
+    fields: []
+    sql_on: ${spend.kx_member_id} = ${m.kx_member_id} ;;
+    type: left_outer
+    relationship: many_to_one
+  }
+
+  join: g {
+    from: gender
+    fields: []
+    sql_on: ${m.kn_gender} = ${g.kn_gender} ;;
+    type: left_outer
+    relationship: one_to_one
+  }
+}
+
+explore: users {
+
+}
