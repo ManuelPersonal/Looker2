@@ -1,0 +1,19 @@
+include: "./base.view.lkml"
+
+view: investment {
+
+  extends: [base]
+
+  measure: all_available_points {
+    hidden: yes
+    type: sum
+    sql: ${mn_new_balance} ;;
+    filters: [kn_status: "0"]
+  }
+
+  measure: sum_available_points {
+    type: number
+    sql: ROUND(${all_available_points}, 2) ;;
+  }
+
+}
