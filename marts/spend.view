@@ -1,0 +1,225 @@
+include: "./base.view.lkml"
+
+view: spend {
+
+  extends: [base]
+
+  measure: total_amount_successful_loyalty_tickets {
+    hidden: yes
+    type: sum
+    sql: ${mf_amount} ;;
+    filters: [kn_transaction_type: "10,4,45", kn_status: "0"]
+  }
+
+  measure: total_count_successful_loyalty_tickets {
+    hidden: yes
+    type: count_distinct
+    sql: ${kn_activity_id} ;;
+    filters: [kn_transaction_type: "10,4,45", kn_status: "0"]
+  }
+
+  measure: avg_loyalty_ticket_ally {
+    type: number
+    sql: ROUND(SAFE_DIVIDE(${total_amount_successful_loyalty_tickets}, ${total_count_successful_loyalty_tickets}), 2) ;;
+  }
+
+  measure: avg_loyalty_ticket_program {
+    type: number
+    sql: ${avg_loyalty_ticket_ally} ;;
+  }
+
+  measure: total_sales_ally {
+    type: number
+    sql: ROUND(${total_amount_successful_purchases}, 2) ;;
+  }
+
+  measure: total_amount_successful_point_redeems {
+    hidden: yes
+    type: sum
+    sql: ${mn_points_redeemed} ;;
+    filters: [kn_transaction_type: "4,45", kn_status: "0"]
+  }
+
+  measure: total_count_successful_point_redeems {
+    hidden: yes
+    type: count_distinct
+    sql: ${kn_activity_id} ;;
+    filters: [kn_transaction_type: "4,45", kn_status: "0"]
+  }
+
+  measure: avg_redeem_ticket_ally {
+    type: number
+    sql: ROUND(SAFE_DIVIDE(${total_amount_successful_point_redeems}, ${total_count_successful_point_redeems}), 2) ;;
+  }
+
+  #### WITH DERIVED TABLE: ###########################################################
+  measure: avg_redeem_ticket_ally_DT {
+    type: number
+    sql: SUM(${TABLE}.avg_redeem_ticket_ally);;
+  }
+  ####################################################################################
+
+  measure: total_amount_successful_purchases {
+    hidden: yes
+    type: sum
+    sql: ${mf_amount} ;;
+    filters: [kn_transaction_type: "10", kn_status: "0"]
+  }
+
+  measure: total_count_successful_purchases {
+    hidden: yes
+    type: count_distinct
+    sql: ${kn_activity_id} ;;
+    filters: [kn_transaction_type: "10", kn_status: "0"]
+  }
+
+  measure: avg_accumulation_ticket {
+    type: number
+    sql: ROUND(SAFE_DIVIDE(${total_amount_successful_purchases}, ${total_count_successful_purchases}), 2) ;;
+  }
+
+  measure: total_amount_successful_tickets {
+    hidden: yes
+    type: sum
+    sql: ${mf_amount} ;;
+    filters: [kn_transaction_type: "10,4,45", kn_status: "0"]
+  }
+
+  measure: total_count_successful_tickets {
+    hidden: yes
+    type: count_distinct
+    sql: ${kn_activity_id} ;;
+    filters: [kn_transaction_type: "10,4,45", kn_status: "0"]
+  }
+
+  measure: avg_ticket_ally {
+    type: number
+    sql: ROUND(SAFE_DIVIDE(${total_amount_successful_tickets}, ${total_count_successful_tickets}), 2) ;;
+  }
+
+  ##### DERIVED TABLE FOR AVG_REDEEM_TICKET_ALLY #####################################
+  derived_table: {
+    sql:
+    WITH
+redeem AS (
+SELECT
+--  a.DxTransaction_Source_Generated_Id,
+    a.MfAmount,
+    a.KxMember_Id,
+    a.KnDate,
+    a.KnStore as KnLocation,
+    a.KnSponsor,
+    a.KnTransaction_Type,
+    a.KnTRansaction_Status,
+    a.KnMember_Card_Type,
+    a.KnCity,
+  CASE
+    WHEN a.DxTransaction_Source_Generated_Id LIKE "r-%" THEN SUBSTRING(a.DxTransaction_Source_Generated_Id,3,length(a.DxTransaction_Source_Generated_Id))
+    WHEN a.DxTransaction_Source_Generated_Id LIKE "%pwp" THEN SUBSTRING(a.DxTransaction_Source_Generated_Id,1,length(a.DxTransaction_Source_Generated_Id)-3)
+    ELSE a.DxTransaction_Source_Generated_Id
+  END AS trans_redeem_clean
+FROM `@{dataset_refined}.DAF_COA_TRANSACTION.FActivity_Transaction` AS a
+    LEFT JOIN `@{dataset_refined}.DAF_COA_TRANSACTION.DTransaction_Type` AS b USING (KnTransaction_Type)
+    LEFT JOIN `@{dataset_refined}.DAF_COA_USER.DTransaction_Status` AS c ON a.KnTRansaction_Status = c.KnTRansaction_Status
+    WHERE
+     b.DxTransaction_Type IN
+--        ('PURCHASE',
+        ('PAYMENT_WITH_POINTS','PUNCHCARD_REDEMPTION')
+--      AND a.dTransaction_Date >= DATE_SUB(CURRENT_DATE(), INTERVAL 43 DAY)
+--      AND a.dTransaction_Date <= DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+      AND
+      c.DxTransaction_Status = 'SUCCESS'
+      AND a.dTransaction_Date >= DATE('2023-02-01')
+      AND a.DxTransaction_Source_Generated_Id LIKE "r-%" OR a.DxTransaction_Source_Generated_Id LIKE "%pwp"
+GROUP BY
+  a.MfAmount,
+  KxMember_Id,
+  KnDate,
+  KnLocation,
+  KnSponsor,
+  KnTransaction_Type,
+  KnTRansaction_Status,
+  KnMember_Card_Type,
+  KnCity,
+  a.DxTransaction_Source_Generated_Id
+--  dAccrualDate,
+--  dExpiration_Date
+)
+, purchase AS (
+  SELECT
+--  a.DxTransaction_Source_Generated_Id,
+    a.dTransaction_Date,
+    a.MfAmount,
+    a.KxMember_Id,
+    a.KnDate,
+    a.KnStore as KnLocation,
+    a.KnSponsor,
+    a.KnTransaction_Type,
+    a.KnTRansaction_Status,
+    a.KnMember_Card_Type,
+    a.KnCity,
+    a.KnActivity_Id,
+  CASE
+    WHEN a.DxTransaction_Source_Generated_Id LIKE "c-%" THEN SUBSTRING(a.DxTransaction_Source_Generated_Id,3,length(a.DxTransaction_Source_Generated_Id))
+    ELSE a.DxTransaction_Source_Generated_Id
+  END AS trans_accum_clean
+FROM `@{dataset_refined}.DAF_COA_TRANSACTION.FActivity_Transaction` AS a
+    LEFT JOIN `@{dataset_refined}.DAF_COA_TRANSACTION.DTransaction_Type` AS b USING (KnTransaction_Type)
+    LEFT JOIN `@{dataset_refined}.DAF_COA_USER.DTransaction_Status` AS c ON a.KnTRansaction_Status = c.KnTRansaction_Status
+    WHERE
+     b.DxTransaction_Type IN ('PURCHASE') --,'PAYMENT_WITH_POINTS','PUNCHCARD_REDEMPTION')
+--       AND a.dTransaction_Date >= DATE_SUB(CURRENT_DATE(), INTERVAL 43 DAY)
+--      AND a.dTransaction_Date <= DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+      AND
+      c.DxTransaction_Status = 'SUCCESS'
+      AND a.dTransaction_Date >= DATE('2023-02-01')
+      AND a.DxTransaction_Source_Generated_Id LIKE "c-%"
+GROUP BY
+  a.MfAmount,
+  KxMember_Id,
+  KnDate,
+  KnLocation,
+  KnSponsor,
+  KnTransaction_Type,
+  KnTRansaction_Status,
+  KnMember_Card_Type,
+  KnCity,
+  a.DxTransaction_Source_Generated_Id,
+  a.KnActivity_Id,
+  a.dTransaction_Date
+--  dAccrualDate,
+--  dExpiration_Date
+)
+
+SELECT
+    a.KxMember_Id,
+    a.KnDate,
+    a.KnLocation,
+    a.KnSponsor,
+    a.KnTransaction_Type,
+    a.KnTRansaction_Status,
+    a.KnMember_Card_Type,
+    a.KnCity,
+    -- Faltan JOINS de trusted
+    NULL as dAccrualDate,
+    NULL as dExpiration_Date,
+    SAFE_DIVIDE(SUM(a.MfAmount), COUNT(DISTINCT a.KnActivity_Id)) as avg_redeem_ticket_ally
+FROM purchase AS a
+--LEFT
+JOIN redeem AS b USING (KxMember_Id)
+  WHERE a.dTransaction_Date >= DATE('2023-02-25')
+--  AND a.dTransaction_Date = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+GROUP BY
+  KxMember_Id,
+  KnDate,
+  KnLocation,
+  KnSponsor,
+  KnTransaction_Type,
+  KnTRansaction_Status,
+  KnMember_Card_Type,
+  KnCity,
+  dAccrualDate,
+  dExpiration_Date
+  ;;
+  }
+}
