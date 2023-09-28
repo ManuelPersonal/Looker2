@@ -1,0 +1,291 @@
+view: users {
+  # Or, you could make this view a derived table, like this:
+  derived_table: {
+    sql:
+    {% assign churn_days=42 %}
+    WITH usuarios_totales AS (
+      SELECT
+        KnMember_Id as member_id
+        , KnEnrollment_Sponsor as h_enrollment_sponsor_id
+        , DATE(dJoining_Date) as date_of_joining
+        , m.KnGender as gender_id
+        , DATE_DIFF(CURRENT_DATE(), DATE(m.dDate_of_Birth), YEAR) as edad
+      FROM
+        `@{dataset_refined}.DAF_COA_USER.DEnrollment_Member` mma
+      LEFT JOIN `@{dataset_refined}.DAF_COA_USER.DMember` as m ON mma.KnMember_Id = KxMember_Id
+      WHERE
+        mma.dUpdated_ts = (
+          SELECT max(dUpdated_ts)
+          FROM `@{dataset_refined}.DAF_COA_USER.DEnrollment_Member` mmb
+          WHERE mmb.KnMember_Id = mma.KnMember_Id
+        )
+    )
+    , ab_ecosistema AS (
+      SELECT
+        a.dTransaction_Date AS dia_date
+        , a.KxMember_Id as member_id
+        , a.KnSponsor as h_sponsor_id
+      FROM
+        `@{dataset_refined}.DAF_COA_TRANSACTION.FActivity_Transaction` as a
+      WHERE
+        a.KnTransaction_Status = 0 /*'SUCCESS'*/
+        AND a.KnTransaction_Type IN (
+          10 -- 'PURCHASE'
+          ,4 -- 'PAYMENT_WITH_POINTS'
+          ,45 -- 'PUNCHCARD_REDEMPTION'
+        )
+        AND a.dTransaction_Date > DATE('2023-02-01')
+    )
+    , ab AS (
+      SELECT
+        a.dTransaction_Date AS dia_date
+        , a.KxMember_Id as member_id
+        , a.KnSponsor as h_sponsor_id
+      FROM
+        `@{dataset_refined}.DAF_COA_TRANSACTION.FActivity_Transaction` as a
+      WHERE
+        a.KnTransaction_Status = 0 /*'SUCCESS'*/
+        AND a.KnTransaction_Type IN (
+          10 -- 'PURCHASE'
+          ,4 -- 'PAYMENT_WITH_POINTS'
+          ,45 -- 'PUNCHCARD_REDEMPTION'
+        )
+        AND a.dTransaction_Date > DATE('2023-02-01')
+        -- AND a.KnSponsor = 6
+        AND {% condition KnSponsor %} a.KnSponsor {% endcondition %}
+    )
+    , dias_rfm AS (
+      SELECT
+        DISTINCT dia_date AS dia_periodo_fin
+      FROM
+        ab_ecosistema
+      WHERE
+        dia_date >= '2023-03-31'
+        AND dia_date < CURRENT_DATE('-06')
+        AND dia_date >= DATE_ADD(CURRENT_DATE('-06'), INTERVAL -3 DAY)
+    )
+    , days_periodos AS (
+      SELECT
+        dia_periodo_fin
+        , DATE_ADD(dia_periodo_fin, INTERVAL - {{churn_days}} + 1 DAY) AS dia_periodo_inicio
+        , DATE_ADD(dia_periodo_fin, INTERVAL - {{churn_days}} DAY) AS dia_antes_periodo_fin
+        , DATE_ADD(dia_periodo_fin, INTERVAL - 2 * {{churn_days}} + 1 DAY) AS dia_antes_periodo_inicio
+      FROM
+        dias_rfm
+      ORDER BY
+        dia_periodo_fin
+    )
+    , base_usuarios_totales AS (
+      SELECT
+        member_id
+        , gender_id
+        , edad
+        , date_of_joining
+        , dia_periodo_fin
+        , dia_periodo_inicio
+        , dia_antes_periodo_fin
+        , dia_antes_periodo_inicio
+      FROM
+        usuarios_totales
+        , days_periodos
+      WHERE
+        date_of_joining <= dia_periodo_fin
+    )
+    , last_tx_aliado_users AS (
+      SELECT
+        member_id
+        , dia_periodo_fin
+        , h_sponsor_id
+        , MAX(dia_date) AS last_tx_aliado
+      FROM
+        ab,
+        days_periodos
+      WHERE
+        dia_date <= dia_periodo_fin
+      GROUP BY
+        member_id
+        , dia_periodo_fin
+        , h_sponsor_id
+    )
+    , last_tx_ecosistema_users AS (
+      SELECT
+        member_id
+        , dia_periodo_fin
+        , MAX(dia_date) AS last_tx_ecosistema
+      FROM
+        ab_ecosistema,
+        days_periodos
+      WHERE
+        dia_date <= dia_periodo_fin
+      GROUP BY
+        member_id
+        , dia_periodo_fin
+    )
+    , txs_periodos AS (
+      SELECT
+        *
+        , CASE
+          WHEN dia_date >= dia_periodo_inicio AND dia_date <= dia_periodo_fin
+          THEN 1
+          ELSE 0
+      END AS txs_periodo_churn
+      , CASE WHEN dia_date >= dia_antes_periodo_inicio AND dia_date <= dia_antes_periodo_fin
+        THEN 1
+        ELSE 0
+      END AS txs_periodo_antes_churn
+      FROM
+        ab
+        , days_periodos
+      WHERE
+        dia_date <= dia_periodo_fin
+        AND dia_date >= dia_antes_periodo_inicio
+    )
+    , resumen_txs_periodos AS (
+      SELECT
+        member_id
+        , dia_periodo_fin
+        , dia_periodo_inicio
+        , dia_antes_periodo_fin
+        , dia_antes_periodo_inicio
+        , MAX(txs_periodo_churn) AS flag_churn
+        , MAX(txs_periodo_antes_churn) AS flag_antes_churn
+      FROM
+        txs_periodos
+      GROUP BY
+        member_id
+        , dia_periodo_fin
+        , dia_periodo_inicio
+        , dia_antes_periodo_fin
+        , dia_antes_periodo_inicio
+    )
+    , usuarios_last_tx_periodos AS (
+      SELECT
+        member_id
+        , gender_id
+        , edad
+        , last_tx_aliado_users.h_sponsor_id
+        , dia_periodo_fin
+        , dia_periodo_inicio
+        , dia_antes_periodo_fin
+        , dia_antes_periodo_inicio
+        , date_of_joining
+        , last_tx_ecosistema
+        , last_tx_aliado
+        , COALESCE(flag_churn, 0) as flag_churn
+        , COALESCE(flag_antes_churn, 0) AS flag_antes_churn
+      FROM
+        base_usuarios_totales
+      LEFT JOIN resumen_txs_periodos USING
+        (
+          member_id
+          , dia_periodo_fin
+          , dia_periodo_inicio
+          , dia_antes_periodo_fin
+          , dia_antes_periodo_inicio
+        )
+      LEFT JOIN last_tx_ecosistema_users USING (member_id, dia_periodo_fin)
+      LEFT JOIN last_tx_aliado_users USING (member_id, dia_periodo_fin)
+    )
+    , flag_periodo AS (
+      SELECT
+        *,
+        CASE
+          WHEN flag_churn = 0 AND flag_antes_churn = 1 THEN 'churn'
+          WHEN flag_churn = 1 AND flag_antes_churn = 1 THEN 'activo'
+          WHEN flag_churn = 1 AND flag_antes_churn = 0 AND DATE_DIFF(dia_periodo_fin, date_of_joining, DAY) > 30 THEN 'winback'
+          WHEN flag_churn = 1 AND flag_antes_churn = 0 AND DATE_DIFF(dia_periodo_fin, date_of_joining, DAY) <= 30 THEN 'nuevo'
+          WHEN flag_churn = 0 AND flag_antes_churn = 0 AND DATE_DIFF(dia_periodo_fin, date_of_joining, DAY) <= 30 THEN 'nuevo sin txs'
+          WHEN flag_churn = 0 AND flag_antes_churn = 0 AND last_tx_aliado IS NOT NULL THEN 'inactivo con txs en aliado'
+          WHEN flag_churn = 0 AND flag_antes_churn = 0 AND last_tx_aliado IS NULL AND last_tx_ecosistema IS NOT NULL THEN 'inactivo sin txs en aliado con txs en ecosistema'
+          WHEN flag_churn = 0 AND flag_antes_churn = 0 AND last_tx_aliado IS NULL AND last_tx_ecosistema IS NULL THEN 'inactivo sin txs ecosistema'
+          ELSE 'sin clasificar'
+        END AS flag
+      FROM usuarios_last_tx_periodos
+    )
+
+    SELECT
+      a.gender_id as KnGender
+      , CASE
+          WHEN a.edad  < 18.0 THEN '(-inf,18)'
+          WHEN a.edad  >= 18.0 AND a.edad  < 26.0 THEN '[18,26)'
+          WHEN a.edad  >= 26.0 AND a.edad  < 36.0 THEN '[26,36)'
+          WHEN a.edad  >= 36.0 AND a.edad  < 50.0 THEN '[36,50)'
+          WHEN a.edad  >= 50.0 THEN '[50.0,inf)'
+          ELSE 'Undefined'
+        END AS age_group
+      , a.dia_periodo_fin as dTransaction_Date
+      , a.h_sponsor_id as KnSponsor
+      , COUNT(DISTINCT IF(flag='churn', a.member_id, NULL)) as churn
+      , COUNT(DISTINCT IF(flag='winback', a.member_id, NULL)) as winback
+      , COUNT(DISTINCT IF(flag='nuevo', a.member_id, NULL)) as nuevos
+      , COUNT(DISTINCT IF(flag='nuevo sin txs', a.member_id, NULL)) as nuevos_registros
+      , COUNT(DISTINCT IF(flag='activo', a.member_id, NULL)) as activos
+    FROM
+      flag_periodo as a
+    GROUP BY
+      a.gender_id
+      , age_group
+      , a.dia_periodo_fin
+      , a.h_sponsor_id
+      ;;
+  }
+
+  dimension: KnSponsor {
+    type: number
+    sql: ${TABLE}.KnSponsor ;;
+  }
+  dimension: sponsor_name {
+    type: string
+    sql:  ;;
+  }
+
+  dimension: age_group {
+    type: string
+    sql: ${TABLE}.age_group ;;
+  }
+
+  dimension_group: transaction {
+    type: time
+    timeframes: [raw, date, week, month, quarter, year]
+    convert_tz: no
+    datatype: date
+    sql: ${TABLE}.dTransaction_Date ;;
+  }
+
+  dimension: KnGender {
+    type: number
+    sql: ${TABLE}.KnGender ;;
+  }
+
+  dimension: gender_dsx {
+    type: string
+    sql:  ;;
+  }
+
+  measure: churn {
+    type: number
+    sql: SUM(${TABLE}.churn) ;;
+  }
+
+  measure: active_users_ally {
+    type: number
+    sql: SUM(${TABLE}.activos) ;;
+  }
+
+  measure: new_users_ally {
+    # Solo nuevos_registros? O tambien nuevos? -- SEGUN EL EXCEL MAP SOLO NUEVOS QUE TRANSACCIONAN
+    type: number
+    sql: SUM(${TABLE}.nuevos) ;;
+  }
+
+  measure: registered_users {
+    # Creo que aca van 'nuevos' nada mas por como esta la logica, o necesitamos otro flag? -- DE TODA LA COALICION, SON AL REVÉS LOS KPIs
+    type: number
+    sql: SUM(${TABLE}.nuevos + ${TABLE}.nuevos_registros) ;;
+  }
+
+  measure: churn_rate {
+    type: number
+    sql: SAFE_DIVIDE(${churn}, ${churn} + ${active_users_ally}) ;;
+  }
+}
