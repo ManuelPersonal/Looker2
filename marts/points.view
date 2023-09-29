@@ -1,8 +1,9 @@
-include: "./base.view.lkml"
+include: "./base_tsx.view.lkml"
+include: "./dimensiones.view.lkml"
 
 view: points {
 
-  extends: [base]
+  extends: [base_tsx, dimensiones]
 
   measure: accumulated_points{
     hidden: yes
@@ -28,9 +29,9 @@ view: points {
     sql: ${redeemed_points} ;;
   }
 
-  measure: convertion_points {
+  measure: convertion_rate {
     type: number
-    sql: ROUND(SAFE_DIVIDE(${total_redeemed_points}, ${total_accumulated_points}), 2) ;;
+    sql: ROUND(100 * SAFE_DIVIDE(${total_redeemed_points}, ${total_accumulated_points}), 2) ;;
   }
 
 }
