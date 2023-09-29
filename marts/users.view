@@ -1,5 +1,7 @@
+include: "./dimensiones.view.lkml"
+
 view: users {
-  # Or, you could make this view a derived table, like this:
+  extends: [dimensiones]
   derived_table: {
     sql:
     {% assign churn_days=42 %}
@@ -41,6 +43,7 @@ view: users {
         a.dTransaction_Date AS dia_date
         , a.KxMember_Id as member_id
         , a.KnSponsor as h_sponsor_id
+        , a.KnCity
       FROM
         `@{dataset_refined}.DAF_COA_TRANSACTION.FActivity_Transaction` as a
       WHERE
@@ -52,7 +55,7 @@ view: users {
         )
         AND a.dTransaction_Date > DATE('2023-02-01')
         -- AND a.KnSponsor = 6
-        AND {% condition KnSponsor %} a.KnSponsor {% endcondition %}
+        AND {% condition kn_sponsor %} a.KnSponsor {% endcondition %}
     )
     , dias_rfm AS (
       SELECT
@@ -60,9 +63,9 @@ view: users {
       FROM
         ab_ecosistema
       WHERE
-        dia_date >= '2023-03-31'
+        dia_date >= '2023-02-01'
         AND dia_date < CURRENT_DATE('-06')
-        AND dia_date >= DATE_ADD(CURRENT_DATE('-06'), INTERVAL -3 DAY)
+        -- AND dia_date >= DATE_ADD(CURRENT_DATE('-06'), INTERVAL -13 DAY)
     )
     , days_periodos AS (
       SELECT
@@ -96,6 +99,7 @@ view: users {
         member_id
         , dia_periodo_fin
         , h_sponsor_id
+        , KnCity
         , MAX(dia_date) AS last_tx_aliado
       FROM
         ab,
@@ -106,6 +110,7 @@ view: users {
         member_id
         , dia_periodo_fin
         , h_sponsor_id
+        , KnCity
     )
     , last_tx_ecosistema_users AS (
       SELECT
@@ -164,6 +169,7 @@ view: users {
         , gender_id
         , edad
         , last_tx_aliado_users.h_sponsor_id
+        , last_tx_aliado_users.KnCity
         , dia_periodo_fin
         , dia_periodo_inicio
         , dia_antes_periodo_fin
@@ -215,11 +221,13 @@ view: users {
         END AS age_group
       , a.dia_periodo_fin as dTransaction_Date
       , a.h_sponsor_id as KnSponsor
+      , a.KnCity
       , COUNT(DISTINCT IF(flag='churn', a.member_id, NULL)) as churn
       , COUNT(DISTINCT IF(flag='winback', a.member_id, NULL)) as winback
       , COUNT(DISTINCT IF(flag='nuevo', a.member_id, NULL)) as nuevos
       , COUNT(DISTINCT IF(flag='nuevo sin txs', a.member_id, NULL)) as nuevos_registros
       , COUNT(DISTINCT IF(flag='activo', a.member_id, NULL)) as activos
+      , COUNT(DISTINCT a.member_id) as count_users
     FROM
       flag_periodo as a
     GROUP BY
@@ -227,16 +235,14 @@ view: users {
       , age_group
       , a.dia_periodo_fin
       , a.h_sponsor_id
+      , a.KnCity
       ;;
   }
 
-  dimension: KnSponsor {
-    type: number
-    sql: ${TABLE}.KnSponsor ;;
-  }
-  dimension: sponsor_name {
+  dimension: age {
     type: string
-    sql:  ;;
+    hidden: yes
+    sql: NULL ;;
   }
 
   dimension: age_group {
@@ -244,48 +250,39 @@ view: users {
     sql: ${TABLE}.age_group ;;
   }
 
-  dimension_group: transaction {
-    type: time
-    timeframes: [raw, date, week, month, quarter, year]
-    convert_tz: no
-    datatype: date
-    sql: ${TABLE}.dTransaction_Date ;;
-  }
-
-  dimension: KnGender {
-    type: number
-    sql: ${TABLE}.KnGender ;;
-  }
-
-  dimension: gender_dsx {
-    type: string
-    sql:  ;;
-  }
-
   measure: churn {
     type: number
     sql: SUM(${TABLE}.churn) ;;
   }
 
-  measure: active_users_ally {
+  measure: active_users {
     type: number
     sql: SUM(${TABLE}.activos) ;;
   }
 
-  measure: new_users_ally {
-    # Solo nuevos_registros? O tambien nuevos? -- SEGUN EL EXCEL MAP SOLO NUEVOS QUE TRANSACCIONAN
+  measure: new_users {
     type: number
     sql: SUM(${TABLE}.nuevos) ;;
   }
 
   measure: registered_users {
-    # Creo que aca van 'nuevos' nada mas por como esta la logica, o necesitamos otro flag? -- DE TODA LA COALICION, SON AL REVÉS LOS KPIs
     type: number
     sql: SUM(${TABLE}.nuevos + ${TABLE}.nuevos_registros) ;;
   }
 
   measure: churn_rate {
     type: number
-    sql: SAFE_DIVIDE(${churn}, ${churn} + ${active_users_ally}) ;;
+    sql: ROUND(100 * SAFE_DIVIDE(${churn}, ${churn} + ${active_users}), 2) ;;
   }
+
+  measure: total_users {
+    type: number
+    sql: SUM(${TABLE}.count_users) ;;
+  }
+
+  measure: retention_rate {
+    type: number
+    sql: ROUND(100 * SAFE_DIVIDE(${active_users}, ${total_users}), 2) ;;
+  }
+
 }
