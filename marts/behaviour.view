@@ -1,8 +1,9 @@
-include: "./base.view.lkml"
+include: "./base_tsx.view.lkml"
+include: "./dimensiones.view.lkml"
 
 view: behavior {
 
-  extends: [base]
+  extends: [base_tsx, dimensiones]
 
   measure: total_successful_purchases {
     hidden: yes
@@ -80,52 +81,27 @@ view: behavior {
 
   measure:  avg_frequency_accumulation_ally {
     type: number
-    sql: ROUND(SAFE_DIVIDE(${total_successful_purchases}, ${total_successful_purchase_members}), 2) ;;
+    sql: ROUND(100 * SAFE_DIVIDE(${total_successful_purchases}, ${total_successful_purchase_members}), 2) ;;
   }
 
   measure:  avg_frequency_ally {
     type: number
-    sql: ROUND(SAFE_DIVIDE(${total_successful_activities}, ${total_successful_activities_members}), 2) ;;
+    sql: ROUND(100 * SAFE_DIVIDE(${total_successful_activities}, ${total_successful_activities_members}), 2) ;;
   }
 
   measure:  avg_frequency_redeem_ally {
     type: number
-    sql: ROUND(SAFE_DIVIDE(${total_redeems}, ${total_redeem_members}), 2) ;;
+    sql: ROUND(100 * SAFE_DIVIDE(${total_redeems}, ${total_redeem_members}), 2) ;;
   }
 
   measure:  avg_points_redeemed_ally {
     type: number
-    sql: ROUND(SAFE_DIVIDE(${total_redeemed_points}, ${total_redeemed_points_transactions}), 2) ;;
+    sql: ROUND(100 * SAFE_DIVIDE(${total_redeemed_points}, ${total_redeemed_points_transactions}), 2) ;;
   }
 
   measure:  avg_points_accumulated_ally {
     type: number
-    sql: ROUND(SAFE_DIVIDE(${total_accumulated_points}, ${total_successful_purchases}), 2) ;;
-  }
-
-  dimension: last_x_users {
-    hidden: yes
-    type: number
-    sql: IF(
-      DATE_DIFF(CURRENT_DATE(), DATE(${created_ts_raw}), DAY) <= {{active_num_days._parameter_value}}
-      , ${kx_member_id}
-      , NULL) ;;
-  }
-
-  measure: active_users_x_days {
-    type: count_distinct
-    sql: ${last_x_users} ;;
-    filters: [kn_status: "0"]
-  }
-
-  parameter: active_num_days {
-    type: number
-    default_value: "30"
-  }
-
-  measure: retention_rate_x_days {
-    type: number
-    sql: ROUND(SAFE_DIVIDE(${active_users_x_days}, ${total_members}), 2) ;;
+    sql: ROUND(100 * SAFE_DIVIDE(${total_accumulated_points}, ${total_successful_purchases}), 2) ;;
   }
 
 }
