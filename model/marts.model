@@ -4,6 +4,8 @@ include: "/estrella/marts/investment.view.lkml"
 include: "/estrella/marts/spend.view.lkml"
 include: "/estrella/marts/investment.view.lkml"
 include: "/estrella/marts/users.view.lkml"
+include: "/estrella/marts/points.view.lkml"
+include: "/estrella/marts/ticket_amount_redeems.view.lkml"
 
 # DIMENSIONS
 include: "/estrella/dimensions/enrollment_member.view.lkml"
@@ -58,6 +60,20 @@ explore: behavior {
     type: left_outer
     relationship: one_to_one
   }
+
+  join: sp {
+    from: sponsor
+    fields: []
+    sql_on: ${behavior.kn_sponsor} = ${sp.kn_sponsor} ;;
+    relationship: many_to_one
+  }
+
+  join: geo {
+    from: geographic_area
+    fields: []
+    sql_on: ${behavior.kn_city} = ${geo.kn_city} ;;
+    relationship: many_to_one
+  }
 }
 
 explore: investment {
@@ -92,6 +108,20 @@ explore: investment {
     sql_on: ${m.kn_gender} = ${g.kn_gender} ;;
     type: left_outer
     relationship: one_to_one
+  }
+
+  join: sp {
+    from: sponsor
+    fields: []
+    sql_on: ${investment.kn_sponsor} = ${sp.kn_sponsor} ;;
+    relationship: many_to_one
+  }
+
+  join: geo {
+    from: geographic_area
+    fields: []
+    sql_on: ${investment.kn_city} = ${geo.kn_city} ;;
+    relationship: many_to_one
   }
 }
 
@@ -128,8 +158,125 @@ explore: spend {
     type: left_outer
     relationship: one_to_one
   }
+
+  join: sp {
+    from: sponsor
+    fields: []
+    sql_on: ${spend.kn_sponsor} = ${sp.kn_sponsor} ;;
+    relationship: many_to_one
+  }
+
+  join: geo {
+    from: geographic_area
+    fields: []
+    sql_on: ${spend.kn_city} = ${geo.kn_city} ;;
+    relationship: many_to_one
+  }
+}
+
+explore: points {
+  sql_always_where: DATE(${points.created_ts_raw}) >= DATE("2023-02-01") ;;
+  join: tt {
+    fields: []
+    from: transaction_type
+    sql_on: ${points.kn_transaction_type} = ${tt.kn_transaction_type} ;;
+    type: inner
+    relationship: many_to_one
+  }
+
+  join: ts {
+    fields: []
+    from: transaction_status
+    sql_on: ${points.kn_status} = ${ts.kn_transaction_status} ;;
+    type: inner
+    relationship: many_to_one
+  }
+
+  join: m {
+    from: member
+    fields: []
+    sql_on: ${points.kx_member_id} = ${m.kx_member_id} ;;
+    type: left_outer
+    relationship: many_to_one
+  }
+
+  join: g {
+    from: gender
+    fields: []
+    sql_on: ${m.kn_gender} = ${g.kn_gender} ;;
+    type: left_outer
+    relationship: one_to_one
+  }
+
+  join: sp {
+    from: sponsor
+    fields: []
+    sql_on: ${points.kn_sponsor} = ${sp.kn_sponsor} ;;
+    relationship: many_to_one
+  }
+
+  join: geo {
+    from: geographic_area
+    fields: []
+    sql_on: ${points.kn_city} = ${geo.kn_city} ;;
+    relationship: many_to_one
+  }
 }
 
 explore: users {
+  join: sp {
+    from: sponsor
+    fields: []
+    relationship: many_to_one
+    sql_on: ${users.kn_sponsor} = ${sp.kn_sponsor} ;;
+  }
 
+  join: g {
+    from: gender
+    fields: []
+    sql_on: ${users.kn_gender} = ${g.kn_gender} ;;
+    type: left_outer
+    relationship: one_to_one
+  }
+
+  join: geo {
+    from: geographic_area
+    fields: []
+    sql_on: ${users.kn_city} = ${geo.kn_city} ;;
+    relationship: many_to_one
+  }
+}
+
+explore: redeems {
+  from: ticket_amount_redeems
+
+  join: geo {
+    from: geographic_area
+    fields: []
+    sql_on: ${redeems.kn_city} = ${geo.kn_city} ;;
+    relationship: many_to_one
+  }
+
+  join: sp {
+    from: sponsor
+    fields: []
+    sql_on: ${redeems.kn_sponsor} = ${sp.kn_sponsor} ;;
+    relationship: many_to_one
+  }
+
+  join: m {
+    from: member
+    fields: []
+    sql_on: ${redeems.kx_member_id} = ${m.kx_member_id} ;;
+    type: left_outer
+    relationship: many_to_one
+  }
+
+  join: g {
+    from: gender
+    fields: []
+    sql_on: ${m.kn_gender} = ${g.kn_gender} ;;
+    type: left_outer
+    relationship: one_to_one
+  }
 }
