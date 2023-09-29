@@ -1,0 +1,80 @@
+view: dimensiones {
+  extension: required
+
+  # FECHAS
+  dimension_group: transaction {
+    type: time
+    timeframes: [raw, date, week, month, quarter, year]
+    convert_tz: no
+    datatype: date
+    sql: ${TABLE}.dTransaction_Date ;;
+  }
+
+  dimension: kn_date {
+    hidden: yes
+    type: number
+    sql: ${TABLE}.KnDate ;;
+  }
+
+  # GEO
+  dimension: kn_city {
+    hidden: yes
+    type: number
+    sql: ${TABLE}.KnCity ;;
+  }
+
+  dimension: state {
+    type: string
+    sql: ${geo.dx_state} ;;
+  }
+
+  dimension: city {
+    type: string
+    sql: ${geo.dx_city} ;;
+  }
+
+  # ALIADOS
+  dimension: kn_sponsor {
+    hidden: yes
+    type: number
+    sql: ${TABLE}.KnSponsor ;;
+  }
+
+  dimension: sponsor_name {
+    type: string
+    sql: ${sp.dx_sponsor_name} ;;
+  }
+
+  # PERSONAS
+  dimension: kx_member_id {
+    hidden: yes
+    type: string
+    sql: ${TABLE}.KxMember_Id ;;
+  }
+
+  dimension: age {
+    hidden: yes
+    type: number
+    sql: DATE_DIFF(CURRENT_DATE(), DATE(${m.d_date_of_birth_raw}), YEAR) ;;
+  }
+
+  dimension: age_group {
+    type: tier
+    tiers: [18, 26, 36, 50]
+    style: interval
+    # allow_fill: no
+    sql: ${age} ;;
+  }
+
+  dimension: kn_gender {
+    type: number
+    hidden: yes
+    sql: ${TABLE}.KnGender ;;
+  }
+
+  dimension: gender {
+    type: string
+    sql: ${g.dx_gender} ;;
+  }
+
+}
