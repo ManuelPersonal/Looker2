@@ -1,0 +1,98 @@
+include: "./dimensiones.view.lkml"
+view: ticket_amount_redeems {
+  extends: [dimensiones]
+
+  derived_table: {
+    sql:
+    WITH
+      redeem AS (
+      SELECT
+        a.KnActivity_Id
+        , a.KxMember_Id
+        , a.dTransaction_Date
+        , a.KnSponsor
+        , CASE
+          WHEN a.DxTransaction_Source_Generated_Id LIKE "r-%" THEN
+            SUBSTRING(a.DxTransaction_Source_Generated_Id,3,length(a.DxTransaction_Source_Generated_Id))
+          WHEN a.DxTransaction_Source_Generated_Id LIKE "%pwp" THEN
+            SUBSTRING(a.DxTransaction_Source_Generated_Id,1,length(a.DxTransaction_Source_Generated_Id)-3)
+          ELSE
+            a.DxTransaction_Source_Generated_Id
+        END AS trans_redeem_clean
+      FROM `@{dataset_refined}.DAF_COA_TRANSACTION.FActivity_Transaction` AS a
+      WHERE
+        a.KnTransaction_Status = 0 /*'SUCCESS'*/
+        AND a.KnTransaction_Type IN (
+          4 -- 'PAYMENT_WITH_POINTS'
+          ,45 -- 'PUNCHCARD_REDEMPTION'
+        )
+        AND a.dTransaction_Date >= DATE('2023-02-01')
+        AND a.dTransaction_Date <= DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+        AND a.DxTransaction_Source_Generated_Id LIKE "r-%" OR a.DxTransaction_Source_Generated_Id LIKE "%pwp"
+      )
+      , purchase AS (
+        SELECT
+          a.KnActivity_Id
+          , a.dTransaction_Date
+          , a.MfAmount
+          , a.KxMember_Id
+          , a.KnDate
+          , a.KnStore
+          , a.KnSponsor
+          , a.KnCity
+          , CASE
+            WHEN a.DxTransaction_Source_Generated_Id LIKE "c-%" THEN
+              SUBSTRING(a.DxTransaction_Source_Generated_Id,3,length(a.DxTransaction_Source_Generated_Id))
+            ELSE
+              a.DxTransaction_Source_Generated_Id
+          END AS trans_accum_clean
+        FROM `@{dataset_refined}.DAF_COA_TRANSACTION.FActivity_Transaction` AS a
+        WHERE
+          a.KnTransaction_Status = 0 /*'SUCCESS'*/
+          AND a.KnTransaction_Type = 10 -- PURCHASE
+          AND a.dTransaction_Date >= DATE('2023-02-01')
+          AND a.dTransaction_Date <= DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+          AND a.DxTransaction_Source_Generated_Id LIKE "c-%"
+      )
+
+      SELECT
+        a.KxMember_Id
+        , a.KnDate
+        , a.KnStore
+        , a.KnSponsor
+        , a.KnCity
+        , a.dTransaction_Date
+        , Sum(a.MfAmount) as amount
+        , COUNT(DISTINCT a.KnActivity_Id) as count_txs
+      FROM purchase AS a
+      JOIN redeem AS b ON
+        a.KxMember_Id = b.KxMember_Id
+        AND a.dTransaction_Date = b.dTransaction_Date
+        AND a.KnSponsor = b.KnSponsor
+        AND a.trans_accum_clean = b.trans_redeem_clean
+      GROUP BY
+        KxMember_Id
+        , KnDate
+        , KnStore
+        , KnSponsor
+        , KnCity
+        , dTransaction_Date
+      ;;
+  }
+
+  measure: total_amount {
+    type: number
+    sql: SUM(${TABLE}.amount) ;;
+  }
+
+  measure: count_trans {
+    type: number
+    sql: SUM(${TABLE}.count_txs) ;;
+  }
+
+  measure: avg_redeem_ticket {
+    type: number
+    sql: ROUND(100 * SAFE_DIVIDE(${total_amount}, ${count_trans}), 2) ;;
+  }
+
+}
