@@ -1,8 +1,9 @@
-include: "./base.view.lkml"
+include: "./base_tsx.view.lkml"
+include: "./dimensiones.view.lkml"
 
 view: investment {
 
-  extends: [base]
+  extends: [base_tsx, dimensiones]
 
   measure: all_available_points {
     hidden: yes
