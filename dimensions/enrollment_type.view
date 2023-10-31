@@ -1,0 +1,21 @@
+view: enrollment_type {
+  sql_table_name: `@{dataset_refined}.DAF_COA_USER.DEnrollment_Type` ;;
+
+  dimension_group: d_job_runned {
+    hidden: yes
+    type: time
+    timeframes: [raw, time, date, week, month, quarter, year]
+    sql: ${TABLE}.dJobRunned_ ;;
+  }
+  dimension: dx_enrollment_type {
+    type: string
+    sql: ${TABLE}.DxEnrollment_Type ;;
+  }
+  dimension: kn_enrollment_type {
+    type: number
+    sql: ${TABLE}.KnEnrollment_Type ;;
+  }
+  measure: count {
+    type: count
+  }
+}
