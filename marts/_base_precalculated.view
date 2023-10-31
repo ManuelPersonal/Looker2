@@ -1,0 +1,34 @@
+view: base {
+  extension: required
+
+  dimension: kn_date {
+    type: number
+    sql: 1 ;;
+  }
+
+  dimension: kn_sponsor {
+    type: number
+    sql: 1 ;;
+  }
+
+  dimension: kn_age {
+    type: number
+    sql: 1 ;;
+  }
+
+  dimension: kn_gender {
+    type: number
+    sql: 1 ;;
+  }
+
+  dimension: kn_city {
+    type: number
+    sql: 1 ;;
+  }
+
+  dimension: kn_state {
+    type: number
+    sql: 1 ;;
+  }
+
+}
