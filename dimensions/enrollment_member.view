@@ -1,0 +1,66 @@
+view: enrollment_member {
+  sql_table_name: `@{dataset_refined}.DAF_COA_USER.DEnrollment_Member` ;;
+
+  dimension_group: d_created_ts {
+    type: time
+    timeframes: [raw, time, date, week, month, quarter, year]
+    sql: ${TABLE}.dCreated_ts ;;
+  }
+  dimension_group: d_job_runned {
+    hidden: yes
+    type: time
+    timeframes: [raw, time, date, week, month, quarter, year]
+    sql: ${TABLE}.dJobRunned_ ;;
+  }
+  dimension_group: d_joining {
+    type: time
+    timeframes: [raw, date, week, month, quarter, year]
+    convert_tz: no
+    datatype: date
+    sql: ${TABLE}.dJoining_Date ;;
+  }
+  dimension_group: d_updated_ts {
+    type: time
+    timeframes: [raw, time, date, week, month, quarter, year]
+    sql: ${TABLE}.dUpdated_ts ;;
+  }
+  dimension: dx_status {
+    type: string
+    sql: ${TABLE}.DxStatus ;;
+  }
+  dimension: kn_city {
+    type: number
+    sql: ${TABLE}.KnCity ;;
+  }
+  dimension: kn_date {
+    type: number
+    sql: ${TABLE}.KnDate ;;
+  }
+  dimension: kn_enrollment_channel {
+    type: string
+    sql: ${TABLE}.KnEnrollment_Channel ;;
+  }
+  dimension: kn_enrollment_location {
+    type: string
+    sql: ${TABLE}.KnEnrollment_Location ;;
+  }
+  dimension: kn_enrollment_member {
+    type: number
+    sql: ${TABLE}.KnEnrollment_Member ;;
+  }
+  dimension: kn_enrollment_sponsor {
+    type: number
+    sql: ${TABLE}.KnEnrollment_Sponsor ;;
+  }
+  dimension: kn_enrollment_type {
+    type: number
+    sql: ${TABLE}.KnEnrollment_Type ;;
+  }
+  dimension: kn_member_id {
+    type: string
+    sql: ${TABLE}.KnMember_Id ;;
+  }
+  measure: count {
+    type: count
+  }
+}
