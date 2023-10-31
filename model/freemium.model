@@ -1,0 +1,18 @@
+connection: "darwin"
+
+include: "/marts/precalculated/freemium/behaviour.view.lkml"
+include: "/marts/precalculated/freemium/spend.view.lkml"
+include: "/marts/precalculated/freemium/users.view.lkml"
+
+# DIMENSIONS
+include: "/dimensions/offer.view.lkml"
+include: "/dimensions/sponsor.view.lkml"
+include: "/dimensions/time.view.lkml"
+include: "/dimensions/gender.view.lkml"
+
+
+explore: behaviour {}
+
+explore: spend {}
+
+explore: users {}
