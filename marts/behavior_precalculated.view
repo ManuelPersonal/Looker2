@@ -1,0 +1,33 @@
+include: "../_base.view.lkml"
+
+view: behaviour {
+  extends: [base]
+
+  sql_table_name: `@{dataset_refined}.premia_insights.FBehaviour_daily` ;;
+
+  measure: avg_frequency {
+    type: number
+    sql: ROUND(SAFE_DIVIDE(SUM(${TABLE}.MfAvg_Frequency_Dividend),SUM(${TABLE}.MfAvg_Frequency_Divisor)), 2) ;;
+  }
+
+  measure: avg_points_accumulated {
+    type: number
+    sql: ROUND(SAFE_DIVIDE(SUM(${TABLE}.MfAvg_Points_Accumulated_Dividend),SUM(${TABLE}.MfAvg_Points_Accumulated_Divisor)), 2) ;;
+  }
+
+  measure: avg_points_redeemed {
+    type: number
+    sql: ROUND(SAFE_DIVIDE(SUM(${TABLE}.MfAvg_Points_Redeemed_Dividend),SUM(${TABLE}.MfAvg_Points_Redeemed_Divisor)), 2) ;;
+  }
+
+  measure: avg_frequency_accumulation {
+    type: number
+    sql: ROUND(SAFE_DIVIDE(SUM(${TABLE}.MfAvg_Frequency_Accumulation_Dividend),SUM(${TABLE}.MfAvg_Frequency_Accumulation_Divisor)), 2) ;;
+  }
+
+  measure: avg_frequency_redeem {
+    type: number
+    sql: ROUND(SAFE_DIVIDE(SUM(${TABLE}.MfAvg_Frequency_Redeem_Dividend),SUM(${TABLE}.MfAvg_Frequency_Redeem_Divisor)), 2) ;;
+  }
+
+}
