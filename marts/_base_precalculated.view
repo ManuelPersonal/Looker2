@@ -2,33 +2,93 @@ view: base {
   extension: required
 
   dimension: kn_date {
+    group_label: "Primary Keys"    #### se agrupan en el explore
     type: number
-    sql: 1 ;;
+    sql: ${TABLE}.KnDate ;;
   }
 
   dimension: kn_sponsor {
+    group_label: "Primary Keys"
     type: number
-    sql: 1 ;;
+    sql: ${TABLE}.KnSponsor ;;
   }
 
   dimension: kn_age {
+    group_label: "Primary Keys"
     type: number
-    sql: 1 ;;
+    sql: ${TABLE}.KnAge ;;
   }
 
   dimension: kn_gender {
+    group_label: "Primary Keys"
     type: number
-    sql: 1 ;;
+    sql: ${TABLE}.KnGender ;;
   }
 
   dimension: kn_city {
+    group_label: "Primary Keys"
     type: number
-    sql: 1 ;;
+    sql: ${TABLE}.KnCity ;;
   }
 
   dimension: kn_state {
+    group_label: "Primary Keys"
     type: number
-    sql: 1 ;;
+    sql: ${TABLE}.KnState ;;
+  }
+
+  dimension: sponsor_name {
+    type: string
+    sql: ${sponsor.dx_sponsor_name} ;;    #### especificar de la tabla que se trae, es el campo deseado después del join con el PK
+  }
+
+  dimension: city {
+    type: string
+    sql: ${geo.dx_city} ;;
+  }
+
+  dimension: state {
+    type: string
+    sql: ${geo.dx_state} ;;
+  }
+
+  dimension: gender {
+    type: string
+    sql: ${gender.dx_gender} ;;
+  }
+
+  dimension: age_range {
+    type: string
+    sql: ${age.dx_age} ;;
+  }
+
+  #  ===== TIME ====
+
+  dimension_group: tsx {
+    group_label: "Time"
+    type: time
+    timeframes: [date]
+    convert_tz: no
+    datatype: date
+    sql: ${time.kd_raw} ;;
+  }
+
+  dimension: month {
+    group_label: "Time"
+    type: string
+    sql: ${time.dx_month_name} ;;
+  }
+
+  dimension: month_number {
+    group_label: "Time"
+    type: number
+    sql: ${time.kn_month} ;;
+  }
+
+  dimension: year {
+    group_label: "Time"
+    type: number
+    sql: ${time.kn_year} ;;
   }
 
 }
