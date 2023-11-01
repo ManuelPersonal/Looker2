@@ -5,14 +5,122 @@ include: "/marts/precalculated/freemium/spend.view.lkml"
 include: "/marts/precalculated/freemium/users.view.lkml"
 
 # DIMENSIONS
-include: "/dimensions/offer.view.lkml"
 include: "/dimensions/sponsor.view.lkml"
 include: "/dimensions/time.view.lkml"
 include: "/dimensions/gender.view.lkml"
+include: "/dimensions/geographic_area.view.lkml"
+include: "/dimensions/age.view.lkml"
 
+explore: behaviour {
+  join: time {
+    sql_on: ${time.kn_date} = ${behaviour.kn_date} ;;     ### poner especificamente que tabla y que campo
+    relationship: many_to_one
+    type: left_outer
+    fields: []     ### quiere decir que no traiga ningun field al explore, solo haga JOIN
+  }
 
-explore: behaviour {}
+  join: sponsor {
+    sql_on: ${sponsor.kn_sponsor} = ${behaviour.kn_sponsor} ;;
+    relationship: many_to_one
+    fields: []
+    type: left_outer
+  }
 
-explore: spend {}
+  join: geo {
+    from: geographic_area   #### nombre del view, se hace cuando es largo
+    sql_on: ${geo.kn_city} = ${behaviour.kn_city} AND ${geo.kn_state} = ${behaviour.kn_state} ;;
+    relationship: many_to_one
+    type: left_outer
+    fields: []
+  }
 
-explore: users {}
+  join: gender {
+    sql_on: ${gender.kn_gender} = ${behaviour.kn_gender} ;;
+    relationship: many_to_one
+    type: left_outer
+    fields: []
+  }
+
+  join: age {
+    sql_on: ${age.kn_age} = ${behaviour.kn_age} ;;
+    relationship: many_to_one
+    type: left_outer
+    fields: []
+  }
+}
+
+explore: spend {
+  join: time {
+    sql_on: ${time.kn_date} = ${spend.kn_date} ;;
+    relationship: many_to_one
+    type: left_outer
+    fields: []
+  }
+
+  join: sponsor {
+    sql_on: ${sponsor.kn_sponsor} = ${spend.kn_sponsor} ;;
+    relationship: many_to_one
+    fields: []
+    type: left_outer
+  }
+
+  join: geo {
+    from: geographic_area
+    sql_on: ${geo.kn_city} = ${spend.kn_city} AND ${geo.kn_state} = ${spend.kn_state} ;;
+    relationship: many_to_one
+    type: left_outer
+    fields: []
+  }
+
+  join: gender {
+    sql_on: ${gender.kn_gender} = ${spend.kn_gender} ;;
+    relationship: many_to_one
+    type: left_outer
+    fields: []
+  }
+
+  join: age {
+    sql_on: ${age.kn_age} = ${spend.kn_age} ;;
+    relationship: many_to_one
+    type: left_outer
+    fields: []
+  }
+}
+
+explore: users {
+  join: time {
+    sql_on: ${time.kn_date} = ${users.kn_date} ;;
+    relationship: many_to_one
+    type: left_outer
+    fields: []
+  }
+
+  join: sponsor {
+    sql_on: ${sponsor.kn_sponsor} = ${users.kn_sponsor} ;;
+    relationship: many_to_one
+    fields: []
+    type: left_outer
+  }
+
+  join: geo {
+    from: geographic_area
+    sql_on: ${geo.kn_city} = ${users.kn_city} AND ${geo.kn_state} = ${users.kn_state} ;;
+    relationship: many_to_one
+    type: left_outer
+    fields: []
+  }
+
+  join: gender {
+    sql_on: ${gender.kn_gender} = ${users.kn_gender} ;;
+    relationship: many_to_one
+    type: left_outer
+    fields: []
+  }
+
+  join: age {
+    sql_on: ${age.kn_age} = ${users.kn_age} ;;
+    relationship: many_to_one
+    type: left_outer
+    fields: []
+  }
+}
