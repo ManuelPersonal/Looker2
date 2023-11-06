@@ -1,0 +1,14 @@
+connection: "darwin"
+
+include: "/dimensions/*.view.lkml"                # include all views in the views/ folder in this project
+
+explore: age {}
+explore: enrollment_member {}
+explore: enrollment_type {}
+explore: gender {}
+explore: geographic_area {}
+explore: offer {}
+explore: product {}
+explore: sponsor {}
+explore: store {}
+explore: time {}
