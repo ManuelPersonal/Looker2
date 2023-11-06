@@ -62,12 +62,12 @@ view: base {
     sql: ${age.dx_age} ;;
   }
 
-  #  ===== TIME ====
+#  ===== TIME ====
 
   dimension_group: tsx {
     group_label: "Time"
     type: time
-    timeframes: [date]
+    timeframes: [raw, date, week]
     convert_tz: no
     datatype: date
     sql: ${time.kd_raw} ;;
@@ -76,7 +76,12 @@ view: base {
   dimension: month {
     group_label: "Time"
     type: string
-    sql: ${time.dx_month_name} ;;
+    sql: FORMAT_DATETIME("%B", ${tsx_raw}) ;;
+  }
+
+  dimension: week {
+    type: string
+    sql: FORMAT_DATE("%d", DATE(${tsx_week})) || ' - ' || FORMAT_DATE("%d", DATE_ADD(DATE(${tsx_week}), INTERVAL 6 DAY)) ;;
   }
 
   dimension: month_number {
