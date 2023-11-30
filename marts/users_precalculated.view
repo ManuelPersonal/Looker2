@@ -1,0 +1,92 @@
+include: "../_base.view.lkml"
+
+view: users {
+  extends: [base]
+
+  sql_table_name: `@{dataset_refined}.premia_insights.FUsers_daily` ;;
+
+  measure: days_diff {
+    type: number
+    sql:
+    {% if tsx_date._is_filtered %}   ###################     USE OF LIQUID    ################################################################
+    DATE_DIFF(COALESCE({% date_end tsx_date %}, CURRENT_DATE()), COALESCE({% date_start tsx_date %}, CURRENT_DATE()), DAY)
+    {% elsif month_number._is_filtered %}
+    30
+    {% else %}
+    1
+    {% endif %}
+    ;;
+  }
+
+  measure: active_users {
+    type: number
+    sql:
+    ROUND(
+    {% if tsx_date._is_selected %}
+    SUM(${TABLE}.MfActive_Users)
+    {% else %}
+    CASE WHEN ${days_diff} > 0 THEN
+    SUM(${TABLE}.MfActive_Users) / ${days_diff}
+    ELSE
+    SUM(${TABLE}.MfActive_Users)
+    END
+    {% endif %}
+    , 2)
+    ;;
+  }
+
+  measure: churn_users {
+    type: number
+    sql:
+    ROUND(
+    {% if tsx_date._is_selected %}
+    SUM(${TABLE}.MfChurn_Users)
+    {% else %}
+    CASE WHEN ${days_diff} > 0 THEN
+    SUM(${TABLE}.MfChurn_Users)  / ${days_diff}
+    ELSE
+    SUM(${TABLE}.MfChurn_Users)
+    END
+    {% endif %}
+    , 2)
+    ;;
+  }
+
+  measure: new_users {
+    type: number
+    sql:
+    ROUND(
+    {% if tsx_date._is_selected %}
+    SUM(${TABLE}.MfNew_Users)
+    {% else %}
+    CASE WHEN ${days_diff} > 0 THEN
+    SUM(${TABLE}.MfNew_Users)  / ${days_diff}
+    ELSE
+    SUM(${TABLE}.MfNew_Users)
+    END
+    {% endif %}
+    , 2)
+    ;;
+  }
+
+  measure: registered_users {
+    type: number
+    sql: SUM(${TABLE}.MfRegistered_Users) ;;
+  }
+
+  measure: churn_rate {
+    type: number
+    sql: ROUND(100 * SAFE_DIVIDE(${churn_users}, ${churn_users} + ${active_users}), 2) ;;
+  }
+
+  measure: active_rate {
+    type: number
+    sql: ROUND(100 * SAFE_DIVIDE(${active_users}, ${churn_users} + ${active_users}), 2) ;;
+  }
+
+  measure: retention_rate {
+    type: number
+    sql: ROUND(100 * SAFE_DIVIDE(${active_users}, ${registered_users}), 2) ;;
+  }
+
+}
