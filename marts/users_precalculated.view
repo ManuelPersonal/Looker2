@@ -8,7 +8,7 @@ view: users {
   measure: days_diff {
     type: number
     sql:
-    {% if tsx_date._is_filtered %}   ###################     USE OF LIQUID    ################################################################
+    {% if tsx_date._is_filtered %}   ----------------------------------------   USE OF LIQUID    ################################################################
     DATE_DIFF(COALESCE({% date_end tsx_date %}, CURRENT_DATE()), COALESCE({% date_start tsx_date %}, CURRENT_DATE()), DAY)
     {% elsif month_number._is_filtered %}
     30
