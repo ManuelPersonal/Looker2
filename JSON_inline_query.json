@@ -1,0 +1,15 @@
+{
+  "model": "benefits",
+  "view": "stamps",
+  "fields": ["stamps.total_stamps", 
+            "stamps.total_users_stamps"], 
+  "filters": {
+    "stamps.kn_benefit_status" : "2"
+    "stamps.tsx_date": "${date}",   --------------------- dimension that acts dynamic (the column)
+    "stamps.month_number": "${month_number}",
+    "stamps.year": "${year}",
+    "stamps.kn_sponsor": "${aliado_id}",
+    "stamps.kn_state": "${state_id}",
+    "stamps.week" : "${week}"
+  }
+}
