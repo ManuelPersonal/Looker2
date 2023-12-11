@@ -1,0 +1,67 @@
+view: _dynamic_dates {
+  extension: required
+
+  measure: filter_date_end {
+    hidden: yes
+    type: date
+    sql: COALESCE({% date_end tsx_date %}, CURRENT_DATE()) ;;
+  }
+
+  measure: filter_date_start {
+    hidden: yes
+    type: date
+    sql: COALESCE({% date_start tsx_date %}, CURRENT_DATE()) ;;
+  }
+
+  measure: days_diff {
+    hidden: yes
+    group_label: "Dynamic Time"
+    type: number
+    sql:
+    {% if tsx_date._is_filtered %}
+    DATE_DIFF(${filter_date_end}, ${filter_date_start}, DAY)
+    {% else %}
+    1
+    {% endif %}
+    ;;
+  }
+
+  measure: weeks_diff {
+    hidden: yes
+    group_label: "Dynamic Time"
+    type: number
+    sql:
+    {% if tsx_date._is_filtered %}
+    DATE_DIFF(${filter_date_end}, ${filter_date_start}, WEEK)
+    {% else %}
+    1
+    {% endif %}
+    ;;
+  }
+
+  measure: months_diff {
+    hidden: yes
+    group_label: "Dynamic Time"
+    type: number
+    sql:
+    {% if tsx_date._is_filtered %}
+    DATE_DIFF(${filter_date_end}, ${filter_date_start}, MONTH)
+    {% else %}
+    1
+    {% endif %}
+    ;;
+  }
+
+  measure: time_diff {
+    group_label: "Dynamic Time"
+    type: number
+    sql:
+    CASE
+      WHEN ${days_diff} < 7 THEN ${days_diff}
+      WHEN ${days_diff} < 30 THEN ${weeks_diff}
+      ELSE ${months_diff}
+    END
+    ;;
+  }
+
+}
