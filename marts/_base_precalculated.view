@@ -2,9 +2,10 @@ view: base {
   extension: required
 
   dimension: kn_date {
-    group_label: "Primary Keys"    #### se agrupan en el explore
+    group_label: "Primary Keys"
     type: number
     sql: ${TABLE}.KnDate ;;
+    value_format: "0"
   }
 
   dimension: kn_sponsor {
@@ -39,7 +40,7 @@ view: base {
 
   dimension: sponsor_name {
     type: string
-    sql: ${sponsor.dx_sponsor_name} ;;    #### especificar de la tabla que se trae, es el campo deseado después del join con el PK
+    sql: ${sponsor.dx_sponsor_name} ;;
   }
 
   dimension: city {
@@ -52,6 +53,11 @@ view: base {
     sql: ${geo.dx_state} ;;
   }
 
+  dimension: state_short {
+    type: string
+    sql: ${geo.dx_state_short} ;;
+  }
+
   dimension: gender {
     type: string
     sql: ${gender.dx_gender} ;;
@@ -62,12 +68,12 @@ view: base {
     sql: ${age.dx_age} ;;
   }
 
-#  ===== TIME ====
+  #  ===== TIME ====
 
   dimension_group: tsx {
     group_label: "Time"
     type: time
-    timeframes: [raw, date, week]
+    timeframes: [raw, date, week, month]
     convert_tz: no
     datatype: date
     sql: ${time.kd_raw} ;;
@@ -80,8 +86,18 @@ view: base {
   }
 
   dimension: week {
+    group_label: "Time"
     type: string
     sql: FORMAT_DATE("%d", DATE(${tsx_week})) || ' - ' || FORMAT_DATE("%d", DATE_ADD(DATE(${tsx_week}), INTERVAL 6 DAY)) ;;
+  }
+
+  dimension: viz_date {
+    type: string
+    sql:
+    {% if group_dates._parameter_value == "weeks" %} ${tsx_week} || ' - ' || DATE_ADD(DATE(${tsx_week}), INTERVAL 6 DAY)
+    {% elsif group_dates._parameter_value == "months" %} ${tsx_month} || '-01'
+    {% else %} ${tsx_date} {% endif %}
+    ;;
   }
 
   dimension: month_number {
@@ -94,6 +110,20 @@ view: base {
     group_label: "Time"
     type: number
     sql: ${time.kn_year} ;;
+  }
+
+  parameter: group_dates {
+    type: unquoted
+    allowed_value: {
+      value: "days"
+    }
+    allowed_value: {
+      value: "weeks"
+    }
+    allowed_value: {
+      value: "months"
+    }
+    default_value: "days"
   }
 
 }
