@@ -1,0 +1,77 @@
+include: "../_base.view.lkml"
+include: "../_dynamic_dates.view.lkml"
+include: "./_benefits.view.lkml"
+
+view: stamps {
+  extends: [base, benefits, _dynamic_dates]
+
+  sql_table_name: `@{dataset_refined}.premia_insights.FStamps_Daily` ;;
+
+  dimension: benefit_status {
+    type: string
+    sql: ${bst.dx_benefit_status} ;;
+  }
+
+  measure: total_members {
+    type: number
+    sql:
+    ROUND(
+    {% if tsx_date._is_selected %}
+    ${total_members_daily}
+    {% else %}
+    CASE
+      WHEN ${days_diff} < 6 THEN ${total_members_daily}  / ${time_diff}
+      WHEN ${days_diff} < 30 THEN ${total_members_weekly}  / ${time_diff}
+      ELSE ${total_members_monthly} / ${time_diff}
+    END
+    {% endif %}
+    , 2)
+    ;;
+  }
+
+  measure: total_stamps {
+    type: number
+    sql: SUM(${TABLE}.MfTotal_Stamps) ;;
+  }
+
+  measure: total_tsx {
+    type: number
+    sql: SUM(${TABLE}.MiTotal_Tsx) ;;
+  }
+
+  measure: total_members_daily {
+    type: number
+    sql: SUM(${TABLE}.MiTotal_Members) ;;
+  }
+
+  measure: total_tsx_weekly {
+    type: number
+    sql: SUM(${TABLE}.MiTotal_Tsx_Weekly) ;;
+  }
+
+  measure: total_stamps_weekly {
+    type: number
+    sql: SUM(${TABLE}.MfTotal_Stamps_Weekly) ;;
+  }
+
+  measure: total_members_weekly {
+    type: number
+    sql: SUM(${TABLE}.MiTotal_Members_Weekly) ;;
+  }
+
+  measure: total_tsx_monthly {
+    type: number
+    sql: SUM(${TABLE}.MiTotal_Tsx_Monthly) ;;
+  }
+
+  measure: total_stamps_monthly {
+    type: number
+    sql: SUM(${TABLE}.MfTotal_Stamps_Monthly) ;;
+  }
+
+  measure: total_members_monthly {
+    type: number
+    sql: SUM(${TABLE}.MiTotal_Members_Monthly) ;;
+  }
+
+}
