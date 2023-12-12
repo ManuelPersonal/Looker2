@@ -1,0 +1,63 @@
+include: "../_base.view.lkml"
+include: "../_dynamic_dates.view.lkml"
+
+view: users {
+  extends: [base,_dynamic_dates]
+
+  sql_table_name: `@{dataset_refined}.premia_insights.FUsers_Daily` ;;
+
+  measure: active_users {
+    type: number
+    sql:
+    ROUND(
+    {% if tsx_date._is_selected %}
+    SUM(${TABLE}.MfActive_Users)
+    {% else %}
+    SUM(${TABLE}.MfActive_Users) / ${time_diff}
+    {% endif %}
+    , 2)
+    ;;
+  }
+
+  measure: churn_users {
+    type: number
+    sql:
+    ROUND(
+    {% if tsx_date._is_selected %}
+    SUM(${TABLE}.MfChurn_Users)
+    {% else %}
+    SUM(${TABLE}.MfChurn_Users)  / ${time_diff}
+    {% endif %}
+    , 2)
+    ;;
+  }
+
+  measure: new_users {
+    type: number
+    sql:
+    ROUND(
+    {% if tsx_date._is_selected %}
+    SUM(${TABLE}.MfNew_Users)
+    {% else %}
+    SUM(${TABLE}.MfNew_Users)  / ${time_diff}
+    {% endif %}
+    , 2)
+    ;;
+  }
+
+  measure: registered_users {
+    type: number
+    sql: SUM(${TABLE}.MfRegistered_Users) ;;
+  }
+
+  measure: churn_rate {
+    type: number
+    sql: ROUND(100 * SAFE_DIVIDE(${churn_users}, ${churn_users} + ${active_users}), 2) ;;
+  }
+
+  measure: retention_rate {
+    type: number
+    sql: ROUND(100 * SAFE_DIVIDE(${active_users}, ${churn_users} + ${active_users}), 2) ;;
+  }
+
+}
