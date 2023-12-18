@@ -1,0 +1,76 @@
+view: offer_pct_ap {
+  # Or, you could make this view a derived table, like this:
+  derived_table: {
+    sql:
+    with base as (
+      select
+      KnDate,
+      KnSponsor,
+      KnState,
+      SUM(MfTotal_Points) as additional_points
+      from ${points_insights.SQL_TABLE_NAME}
+      where KnPoint_Type = 2
+      group by
+      KnDate,
+      KnSponsor,
+      KnState
+    )
+    SELECT *
+    FROM base
+      ;;
+  }
+
+  dimension: kn_date {
+    group_label: "Primary Keys"
+    type: number
+    sql: ${TABLE}.KnDate ;;
+    value_format: "0"
+  }
+
+  dimension: kn_sponsor {
+    group_label: "Primary Keys"
+    type: number
+    sql: ${TABLE}.KnSponsor ;;
+  }
+
+  dimension: kn_state {
+    group_label: "Primary Keys"
+    type: number
+    sql: ${TABLE}.KnState ;;
+  }
+
+  dimension: sponsor_name {
+    type: string
+    sql: ${sponsor.dx_sponsor_name} ;;
+  }
+
+  dimension: state {
+    type: string
+    sql: ${geo.dx_state} ;;
+  }
+
+  dimension: state_short {
+    type: string
+    sql: ${geo.dx_state_short} ;;
+  }
+
+  dimension_group: tsx {
+    group_label: "Time"
+    type: time
+    timeframes: [raw, date, week, month]
+    convert_tz: no
+    datatype: date
+    sql: ${time.kd_raw} ;;
+  }
+
+  dimension: kn_offer {
+    type: number
+    sql: ${TABLE}.KnOffer ;;
+  }
+
+  dimension: offer_rate {
+    type: number
+    sql: ${TABLE}.rate ;;
+  }
+
+}
