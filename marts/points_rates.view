@@ -1,0 +1,180 @@
+view: points_rates {
+  # Or, you could make this view a derived table, like this:
+  derived_table: {
+    sql:
+    with points_total as (
+    SELECT
+      KnDate,
+      KnSponsor,
+      KnState,
+      KnOffer,
+      SUM(MfTotal_Points) as total_points
+    FROM ${points_insights.SQL_TABLE_NAME}
+    GROUP BY 1,2,3,4
+    )
+    , points_base as (
+    SELECT
+      KnDate,
+      KnSponsor,
+      KnState,
+      KnOffer,
+      SUM(MfTotal_Points) as total_base
+    FROM ${points_insights.SQL_TABLE_NAME}
+    WHERE KnPoint_Type = 1
+    GROUP BY 1,2,3,4
+    )
+    , points_additional as (
+    SELECT
+      KnDate,
+      KnSponsor,
+      KnState,
+      KnOffer,
+      SUM(MfTotal_Points) as total_additional
+    FROM ${points_insights.SQL_TABLE_NAME}
+    WHERE KnPoint_Type = 2
+    GROUP BY 1,2,3,4
+    )
+    , points_bonus as (
+    SELECT
+      KnDate,
+      KnSponsor,
+      KnState,
+      KnOffer,
+      SUM(MfTotal_Points) as total_bonus
+    FROM ${points_insights.SQL_TABLE_NAME}
+    WHERE KnPoint_Type = 3
+    GROUP BY 1,2,3,4
+    )
+    SELECT
+      a.KnDate,
+      a.KnSponsor,
+      a.KnState,
+      a.KnOffer,
+      SUM(a.total_points) as total_points,
+      SUM(b.total_base) as total_base,
+      SUM(c.total_additional) as total_additional,
+      SUM(d.total_bonus) as total_bonus
+    FROM points_total as a
+    LEFT JOIN points_base as b USING (KnDate,KnSponsor,KnState,KnOffer)
+    LEFT JOIN points_additional as c USING (KnDate,KnSponsor,KnState,KnOffer)
+    LEFT JOIN points_bonus as d USING (KnDate,KnSponsor,KnState,KnOffer)
+    GROUP BY 1,2,3,4
+      ;;
+  }
+
+  dimension: kn_date {
+    group_label: "Primary Keys"
+    type: number
+    sql: ${TABLE}.KnDate ;;
+    value_format: "0"
+  }
+
+  dimension: kn_sponsor {
+    group_label: "Primary Keys"
+    type: number
+    sql: ${TABLE}.KnSponsor ;;
+  }
+
+  dimension: kn_state {
+    group_label: "Primary Keys"
+    type: number
+    sql: ${TABLE}.KnState ;;
+  }
+
+  dimension: sponsor_name {
+    type: string
+    sql: ${sponsor.dx_sponsor_name} ;;
+  }
+
+  dimension: state {
+    type: string
+    sql: ${geo.dx_state} ;;
+  }
+
+  dimension: state_short {
+    type: string
+    sql: ${geo.dx_state_short} ;;
+  }
+
+  #  ===== TIME ====
+
+  dimension_group: tsx {
+    group_label: "Time"
+    type: time
+    timeframes: [raw, date, week]
+    convert_tz: no
+    datatype: date
+    sql: ${time.kd_raw} ;;
+  }
+
+  dimension: month {
+    group_label: "Time"
+    type: string
+    sql: FORMAT_DATETIME("%B", ${tsx_raw}) ;;
+  }
+
+  dimension: week {
+    group_label: "Time"
+    type: string
+    sql: FORMAT_DATE("%d", DATE(${tsx_week})) || ' - ' || FORMAT_DATE("%d", DATE_ADD(DATE(${tsx_week}), INTERVAL 6 DAY)) ;;
+  }
+
+  dimension: month_number {
+    group_label: "Time"
+    type: number
+    sql: ${time.kn_month} ;;
+  }
+
+  dimension: year {
+    group_label: "Time"
+    type: number
+    sql: ${time.kn_year} ;;
+  }
+
+  dimension: kn_offer {
+    group_label: "Primary Keys"
+    type: number
+    sql: ${TABLE}.KnOffer ;;
+    value_format: "0"
+  }
+
+  # dimension: offer_name {
+  #   type: string
+  #   sql: ${TABLE}.KnOffer ;;
+  # }
+
+  measure: total_points {
+    type: number
+    sql: SUM(${TABLE}.total_points) ;;
+  }
+
+  measure: total_base {
+    type: number
+    sql: SUM(${TABLE}.total_base) ;;
+  }
+
+  measure: total_additional {
+    type: number
+    sql: SUM(${TABLE}.total_additional) ;;
+  }
+
+  measure: total_bonus {
+    type: number
+    sql: SUM(${TABLE}.total_bonus) ;;
+  }
+
+  measure: base_rate {
+    type: number
+    sql: ROUND(100 * ${total_base} / ${total_points}, 2) ;;
+  }
+
+  measure: additional_rate {
+    type: number
+    sql: ROUND(100 * ${total_additional} / ${total_points}, 2) ;;
+  }
+
+  measure: bonus_rate {
+    type: number
+    sql: ROUND(100 * ${total_bonus} / ${total_points}, 2) ;;
+  }
+}
