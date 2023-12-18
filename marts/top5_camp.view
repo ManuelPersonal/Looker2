@@ -1,0 +1,80 @@
+include: "/marts/precalculated/_base.view.lkml"
+include: "/marts/precalculated/benefits/_benefits.view.lkml"
+
+view: top5_campaigns_ap {
+  extends: [base, benefits]
+  # Or, you could make this view a derived table, like this:
+  derived_table: {
+    sql:
+    with top_5 as (
+SELECT
+  a.KnOffer,
+  SUM(a.MfTotal_Points)  AS total_points
+FROM ${points_insights.SQL_TABLE_NAME} as a
+LEFT JOIN ${time.SQL_TABLE_NAME} as time ON time.KnDate = a.KnDate
+WHERE KnPoint_Type = 2
+AND {% condition tsx_date %} time.KdDate {% endcondition %}
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 5
+)
+, total_campaings as (
+SELECT
+  KnDate,
+  KnSponsor,
+  KnState,
+  KnCity,
+  KnGender,
+  KnAge,
+  SUM(MfTotal_Points) as total_points
+FROM ${points_insights.SQL_TABLE_NAME}
+WHERE KnPoint_Type = 2
+GROUP BY
+  KnDate,
+  KnSponsor,
+  KnState,
+  KnCity,
+  KnGender,
+  KnAge
+
+)
+
+SELECT
+  a.KnDate,
+  a.KnSponsor,
+  a.KnState,
+  a.KnCity,
+  a.KnGender,
+  a.KnAge,
+  a.KnOffer,
+  b.total_points,
+  SUM(a.MfTotal_Points) as additional_points,
+  SUM(a.MiTotal_Tsx) as MiTotal_Tsx
+FROM ${points_insights.SQL_TABLE_NAME} as a
+LEFT JOIN total_campaings as b USING (KnDate, KnSponsor, KnState, KnCity, KnGender, KnAge)
+WHERE a.KnOffer in (SELECT KnOffer FROM top_5) AND KnPoint_Type = 2
+GROUP BY
+  a.KnDate,
+  a.KnSponsor,
+  a.KnState,
+  a.KnCity,
+  a.KnGender,
+  a.KnAge,
+  a.KnOffer,
+  b.total_points ;;
+  }
+
+  dimension: kn_benefit_status {
+    hidden: yes
+  }
+
+  measure: total_points {
+    type: number
+    sql: SUM(${TABLE}.total_points) ;;
+  }
+
+  measure: points {
+    type: number
+    sql: SUM(${TABLE}.additional_points) ;;
+  }
+}
