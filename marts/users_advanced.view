@@ -1,0 +1,236 @@
+include: "/marts/precalculated/_base.view.lkml"
+include: "/marts/precalculated/_dynamic_dates.view.lkml"
+
+view: users {
+  extends: [base, _dynamic_dates]
+
+  # POR CAMBIAR
+  sql_table_name: `@{dataset_refined}.premia_insights.FUsers_Advanced` ;;
+
+  measure: days_month {
+    type: number
+    sql:
+    MAX(
+    CASE
+    WHEN
+      EXTRACT(YEAR FROM {% date_start tsx_date %}) = ${time.kn_year} AND
+      EXTRACT(MONTH FROM {% date_start tsx_date %}) = ${time.kn_month} AND
+      EXTRACT(DAY FROM {% date_start tsx_date %}) > 1 THEN
+      ${num_days_month_start}
+    WHEN
+      EXTRACT(YEAR FROM {% date_end tsx_date %}) = ${time.kn_year} AND
+      EXTRACT(MONTH FROM {% date_end tsx_date %}) = ${time.kn_month} AND
+      EXTRACT(DAY FROM {% date_end tsx_date %}) < EXTRACT(DAY FROM ${last_day_month}) THEN
+      ${num_days_month_end}
+    ELSE
+      ${num_days_month}
+    END
+    )
+    ;;
+  }
+
+  measure: num_days_week {
+    hidden: yes
+    type: number
+    sql: DATE_DIFF(DATE_ADD(DATE(${tsx_week}), INTERVAL 6 DAY), DATE(${tsx_week}), DAY) + 1 ;;
+  }
+
+  measure: num_days_week_start {
+    hidden: yes
+    type: number
+    sql: DATE_DIFF(DATE_ADD(DATE(${tsx_week}), INTERVAL 6 DAY), DATE({% date_start tsx_date %}), DAY) + 1 ;;
+  }
+
+  measure: num_days_week_end {
+    hidden: yes
+    type: number
+    sql: DATE_DIFF(DATE({% date_end tsx_date %}), DATE(${tsx_week}), DAY) ;;
+  }
+
+  measure: days_week {
+    type: number
+    sql:
+    MAX(
+    CASE
+    WHEN
+      DATE({% date_start tsx_date %})  > ${start_of_week} THEN
+      ${num_days_week_start}
+    WHEN
+      DATE({% date_end tsx_date %}) < ${end_of_week} THEN
+      ${num_days_week_end}
+    ELSE
+      ${num_days_week}
+    END
+    )
+    ;;
+  }
+
+  measure: active_users_42 {
+    type: number
+    sql:
+    ROUND(
+    {% if tsx_date._is_selected or viz_date._is_selected %}
+      {% if group_dates._parameter_value == "months" %}
+      SUM(${TABLE}.MfActive_Users42) / ${days_month}
+      {% elsif group_dates._parameter_value == "weeks" %}
+      SUM(${TABLE}.MfActive_Users42) / ${days_week}
+      {% else %}
+      SUM(${TABLE}.MfActive_Users42)
+      {% endif %}
+    {% else %}
+    SUM(${TABLE}.MfActive_Users42) / ${days_diff}
+    {% endif %}
+    , 2)
+    ;;
+  }
+
+  measure: churn_users_42 {
+    type: number
+    sql:
+    ROUND(
+    {% if tsx_date._is_selected or viz_date._is_selected %}
+      {% if group_dates._parameter_value == "months" %}
+      SUM(${TABLE}.MfChurn_Users42) / ${days_month}
+      {% elsif group_dates._parameter_value == "weeks" %}
+      SUM(${TABLE}.MfChurn_Users42) / ${days_week}
+      {% else %}
+      SUM(${TABLE}.MfChurn_Users42)
+      {% endif %}
+    {% else %}
+    SUM(${TABLE}.MfChurn_Users42) / ${days_diff}
+    {% endif %}
+    , 2)
+    ;;
+  }
+
+  measure: active_users_30 {
+    type: number
+    sql:
+    ROUND(
+    {% if tsx_date._is_selected or viz_date._is_selected %}
+      {% if group_dates._parameter_value == "months" %}
+      SUM(${TABLE}.MfActive_Users30) / ${days_month}
+      {% elsif group_dates._parameter_value == "weeks" %}
+      SUM(${TABLE}.MfActive_Users30) / ${days_week}
+      {% else %}
+      SUM(${TABLE}.MfActive_Users30)
+      {% endif %}
+    {% else %}
+    SUM(${TABLE}.MfActive_Users30) / ${days_diff}
+    {% endif %}
+    , 2)
+    ;;
+  }
+
+  measure: churn_users_30 {
+    type: number
+    sql:
+    ROUND(
+    {% if tsx_date._is_selected or viz_date._is_selected %}
+      {% if group_dates._parameter_value == "months" %}
+      SUM(${TABLE}.MfChurn_Users30) / ${days_month}
+      {% elsif group_dates._parameter_value == "weeks" %}
+      SUM(${TABLE}.MfChurn_Users30) / ${days_week}
+      {% else %}
+      SUM(${TABLE}.MfChurn_Users30)
+      {% endif %}
+    {% else %}
+    SUM(${TABLE}.MfChurn_Users30) / ${days_diff}
+    {% endif %}
+    , 2)
+    ;;
+  }
+
+  measure: active_users_90 {
+    type: number
+    sql:
+    ROUND(
+    {% if tsx_date._is_selected or viz_date._is_selected %}
+      {% if group_dates._parameter_value == "months" %}
+      SUM(${TABLE}.MfActive_Users90) / ${days_month}
+      {% elsif group_dates._parameter_value == "weeks" %}
+      SUM(${TABLE}.MfActive_Users90) / ${days_week}
+      {% else %}
+      SUM(${TABLE}.MfActive_Users90)
+      {% endif %}
+    {% else %}
+    SUM(${TABLE}.MfActive_Users90) / ${days_diff}
+    {% endif %}
+    , 2)
+    ;;
+  }
+
+  measure: churn_users_90 {
+    type: number
+    sql:
+    ROUND(
+    {% if tsx_date._is_selected or viz_date._is_selected %}
+      {% if group_dates._parameter_value == "months" %}
+      SUM(${TABLE}.MfChurn_Users90) / ${days_month}
+      {% elsif group_dates._parameter_value == "weeks" %}
+      SUM(${TABLE}.MfChurn_Users90) / ${days_week}
+      {% else %}
+      SUM(${TABLE}.MfChurn_Users90)
+      {% endif %}
+    {% else %}
+    SUM(${TABLE}.MfChurn_Users90) / ${days_diff}
+    {% endif %}
+    , 2)
+    ;;
+  }
+
+  measure: new_users {
+    type: number
+    sql:
+    ROUND(
+    {% if tsx_date._is_selected or viz_date._is_selected %}
+      {% if group_dates._parameter_value == "months" %}
+      SUM(${TABLE}.MfNew_Users) / ${days_month}
+      {% elsif group_dates._parameter_value == "weeks" %}
+      SUM(${TABLE}.MfNew_Users) / ${days_week}
+      {% else %}
+      SUM(${TABLE}.MfNew_Users)
+      {% endif %}
+    {% else %}
+    SUM(${TABLE}.MfNew_Users) / ${days_diff}
+    {% endif %}
+    , 2)
+    ;;
+  }
+
+  measure: registered_users {
+    type: number
+    sql: SUM(${TABLE}.MfRegistered_Users) ;;
+  }
+
+  measure: churn_rate_30 {
+    type: number
+    sql: ROUND(100 * SAFE_DIVIDE(${churn_users_30}, ${churn_users_30} + ${active_users_30}), 2) ;;
+  }
+
+  measure: retention_rate_30 {
+    type: number
+    sql: ROUND(100 * SAFE_DIVIDE(${active_users_30}, ${churn_users_30} + ${active_users_30}), 2) ;;
+  }
+
+  measure: churn_rate_42 {
+    type: number
+    sql: ROUND(100 * SAFE_DIVIDE(${churn_users_42}, ${churn_users_42} + ${active_users_42}), 2) ;;
+  }
+
+  measure: retention_rate_42 {
+    type: number
+    sql: ROUND(100 * SAFE_DIVIDE(${active_users_42}, ${churn_users_42} + ${active_users_42}), 2) ;;
+  }
+
+  measure: churn_rate_90 {
+    type: number
+    sql: ROUND(100 * SAFE_DIVIDE(${churn_users_90}, ${churn_users_90} + ${active_users_90}), 2) ;;
+  }
+
+  measure: retention_rate_90 {
+    type: number
+    sql: ROUND(100 * SAFE_DIVIDE(${active_users_90}, ${churn_users_90} + ${active_users_90}), 2) ;;
+  }
+
+}
