@@ -1,0 +1,27 @@
+	
+{
+  "model": "benefits",
+  "view": "points_insights",
+  "fields": ["points_insights.total_tsx"], 
+  "filters": {
+    "points_insights.kn_point_type": "3",
+    "points_insights.tsx_date": "${date}",
+    "points_insights.kn_sponsor": "${aliado_id}",
+    "points_insights.kn_state": "${state_id}",
+    "points_insights.kn_offer" : "${offer_id}"
+  }
+}
+
+
+{
+  "model": "advanced",
+  "view": "users",
+  "fields": ["users.viz_date", "users.unique_users"],
+  "filters": {
+    "users.viz_date": "${group_dates}",
+    "users.tsx_date": "${date}",
+    "users.kn_sponsor": "${aliado_id}",
+    "users.kn_state": "${state_id}",
+  },
+  "sorts": ["users.viz_date desc"]
+}
