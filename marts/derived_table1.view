@@ -1,0 +1,52 @@
+view: additional_points {
+  # Or, you could make this view a derived table, like this:
+  derived_table: {
+    sql: SELECT
+        KnDate,
+        KnSponsor,
+        KnState,
+        KnOffer,
+        SUM(MfTotal_Points) as points
+      FROM ${points_insights.SQL_TABLE_NAME} as base
+      WHERE
+      {% condition offer_insights.tsx_date %} PARSE_DATE('%Y%m%d', CAST(base.KnDate AS STRING)) {% endcondition %}
+      AND
+      KnPoint_Type = 2
+      GROUP BY
+        KnDate,
+        KnSponsor,
+        KnState,
+        KnOffer
+      ;;
+  }
+
+  dimension: kn_date {
+    group_label: "Primary Keys"
+    type: number
+    sql: ${TABLE}.KnDate ;;
+    value_format: "0"
+  }
+
+  dimension: kn_sponsor {
+    group_label: "Primary Keys"
+    type: number
+    sql: ${TABLE}.KnSponsor ;;
+  }
+
+  dimension: kn_state {
+    group_label: "Primary Keys"
+    type: number
+    sql: ${TABLE}.KnState ;;
+  }
+
+  dimension: kn_offer {
+    type: number
+    sql: ${TABLE}.KnOffer ;;
+  }
+
+  dimension: offer_points {
+    type: number
+    sql: ${TABLE}.points ;;
+  }
+
+}
