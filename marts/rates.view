@@ -1,0 +1,181 @@
+view: rewards_rates {
+  # Or, you could make this view a derived table, like this:
+  derived_table: {
+    sql:
+    with
+    all_rewards as (
+      SELECT
+      KnDate,
+      KnSponsor,
+      KnState,
+      KnOffer,
+      SUM(MfTotal_Rewards) as rewards
+      FROM ${rewards.SQL_TABLE_NAME}
+      GROUP BY 1,2,3,4
+    )
+    , completed as (
+      SELECT
+      KnDate,
+      KnSponsor,
+      KnState,
+      KnOffer,
+      SUM(MfTotal_Rewards) as completed_rewards
+      FROM ${rewards.SQL_TABLE_NAME}
+      WHERE KnBenefit_Status = 1
+      GROUP BY 1,2,3,4
+    )
+    , expired as (
+      SELECT
+      KnDate,
+      KnSponsor,
+      KnState,
+      KnOffer,
+      SUM(MfTotal_Rewards) as expired_rewards
+      FROM ${rewards.SQL_TABLE_NAME}
+      WHERE KnBenefit_Status = 2
+      GROUP BY 1,2,3,4
+    )
+    , redeemed as (
+      SELECT
+      KnDate,
+      KnSponsor,
+      KnState,
+      KnOffer,
+      SUM(MfTotal_Rewards) as reedemed_rewards
+      FROM ${rewards.SQL_TABLE_NAME}
+      WHERE KnBenefit_Status = 4
+      GROUP BY 1,2,3,4
+    )
+    select
+    a.KnDate,
+    a.KnSponsor,
+    a.KnState,
+    a.KnOffer,
+    SUM(a.rewards) as total_rewards,
+    SUM(b.completed_rewards) as total_completed,
+    SUM(c.expired_rewards) as total_expired,
+    SUM(d.reedemed_rewards) as total_redeemed,
+    from all_rewards as a
+    LEFT JOIN completed as b USING (KnDate, KnSponsor, KnState, KnOffer)
+    LEFT JOIN expired as c USING (KnDate, KnSponsor, KnState, KnOffer)
+    LEFT JOIN redeemed as d USING (KnDate, KnSponsor, KnState, KnOffer)
+    GROUP BY 1,2,3,4
+      ;;
+  }
+
+  dimension: kn_date {
+    group_label: "Primary Keys"
+    type: number
+    sql: ${TABLE}.KnDate ;;
+    value_format: "0"
+  }
+
+  dimension: kn_sponsor {
+    group_label: "Primary Keys"
+    type: number
+    sql: ${TABLE}.KnSponsor ;;
+  }
+
+  dimension: kn_state {
+    group_label: "Primary Keys"
+    type: number
+    sql: ${TABLE}.KnState ;;
+  }
+
+  dimension: sponsor_name {
+    type: string
+    sql: ${sponsor.dx_sponsor_name} ;;
+  }
+
+  dimension: state {
+    type: string
+    sql: ${geo.dx_state} ;;
+  }
+
+  dimension: state_short {
+    type: string
+    sql: ${geo.dx_state_short} ;;
+  }
+
+  #  ===== TIME ====
+
+  dimension_group: tsx {
+    group_label: "Time"
+    type: time
+    timeframes: [raw, date, week]
+    convert_tz: no
+    datatype: date
+    sql: ${time.kd_raw} ;;
+  }
+
+  dimension: month {
+    group_label: "Time"
+    type: string
+    sql: FORMAT_DATETIME("%B", ${tsx_raw}) ;;
+  }
+
+  dimension: week {
+    group_label: "Time"
+    type: string
+    sql: FORMAT_DATE("%d", DATE(${tsx_week})) || ' - ' || FORMAT_DATE("%d", DATE_ADD(DATE(${tsx_week}), INTERVAL 6 DAY)) ;;
+  }
+
+  dimension: month_number {
+    group_label: "Time"
+    type: number
+    sql: ${time.kn_month} ;;
+  }
+
+  dimension: year {
+    group_label: "Time"
+    type: number
+    sql: ${time.kn_year} ;;
+  }
+
+  dimension: kn_offer {
+    group_label: "Primary Keys"
+    type: number
+    sql: ${TABLE}.KnOffer ;;
+    value_format: "0"
+  }
+
+  dimension: offer_name {
+    type: string
+    sql: ${ofi.offer_name} ;;
+  }
+
+  measure: total_rewards {
+    type: number
+    sql: SUM(${TABLE}.total_rewards) ;;
+  }
+
+  measure: total_completed {
+    type: number
+    sql: SUM(${TABLE}.total_completed) ;;
+  }
+
+  measure: total_expired {
+    type: number
+    sql: SUM(${TABLE}.total_expired) ;;
+  }
+
+  measure: total_redeemed {
+    type: number
+    sql: SUM(${TABLE}.total_redeemed) ;;
+  }
+
+  measure: redeemed_vs_completed {
+    type: number
+    sql: ROUND(100 * ${total_redeemed} / ${total_completed}, 2) ;;
+  }
+
+  measure: completed_rate {
+    type: number
+    sql: ROUND(100 * ${total_completed} / ${total_rewards}, 2) ;;
+  }
+
+  measure: expired_rate {
+    type: number
+    sql: ROUND(100 * ${total_expired} / ${total_rewards}, 2) ;;
+  }
+}
