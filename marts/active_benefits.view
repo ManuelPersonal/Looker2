@@ -1,0 +1,280 @@
+view: active_benefits {
+  sql_table_name: `@{dataset_refined}.premia_insights.FBenefits_Processed` ;;
+
+  dimension: kn_sponsor {
+    type: number
+    description: "Aliado con beneficion relacionado"
+    sql: ${TABLE}.KnSponsor ;;
+  }
+
+  dimension: sponsor_name {
+    type: string
+    sql: ${sponsor.dx_sponsor_name} ;;
+  }
+
+  dimension: has_active_additional_points {
+    group_label: "Benefits Status"
+    type: number
+    description: "indica si el beneficio se encuentra activo para el sponsor relacionado"
+    sql: IF(${active_additional_points} IS NOT NULL, 1, 0) ;;
+  }
+
+  dimension: has_active_base_points {
+    group_label: "Benefits Status"
+    type: number
+    description: "indica si el beneficio se encuentra activo para el sponsor relacionado"
+    sql: IF(${active_base_points} IS NOT NULL, 1, 0) ;;
+  }
+
+  dimension: has_active_bonus {
+    group_label: "Benefits Status"
+    type: number
+    description: "indica si el beneficio se encuentra activo para el sponsor relacionado"
+    sql: IF(${active_bonus} IS NOT NULL, 1, 0) ;;
+  }
+
+  dimension: has_active_rewards {
+    group_label: "Benefits Status"
+    type: number
+    description: "indica si el beneficio se encuentra activo para el sponsor relacionado"
+    sql: IF(${active_rewards} IS NOT NULL, 1, 0) ;;
+  }
+
+  dimension: has_active_stamps {
+    group_label: "Benefits Status"
+    type: number
+    description: "indica si el beneficio se encuentra activo para el sponsor relacionado"
+    sql: IF(${active_stamps} IS NOT NULL, 1, 0) ;;
+  }
+
+  dimension: has_active_stars {
+    group_label: "Benefits Status"
+    type: number
+    description: "indica si el beneficio se encuentra activo para el sponsor relacionado"
+    sql: IF(${active_stars} IS NOT NULL, 1, 0) ;;
+  }
+
+
+  dimension: active_additional_points {
+    hidden: yes
+    type: number
+    description: "indica si el beneficio se encuentra activo para el sponsor relacionado"
+    sql: ${TABLE}.active_additional_points ;;
+  }
+
+  dimension: active_base_points {
+    hidden: yes
+    type: number
+    description: "indica si el beneficio se encuentra activo para el sponsor relacionado"
+    sql: ${TABLE}.active_base_points ;;
+  }
+
+  dimension: active_bonus {
+    hidden: yes
+    type: number
+    description: "indica si el beneficio se encuentra activo para el sponsor relacionado"
+    sql: ${TABLE}.active_bonus ;;
+  }
+
+  dimension: active_rewards {
+    hidden: yes
+    type: number
+    description: "indica si el beneficio se encuentra activo para el sponsor relacionado"
+    sql: ${TABLE}.active_rewards ;;
+  }
+
+  dimension: active_stamps {
+    hidden: yes
+    type: number
+    description: "indica si el beneficio se encuentra activo para el sponsor relacionado"
+    sql: ${TABLE}.active_stamps ;;
+  }
+
+  dimension: active_stars {
+    hidden: yes
+    type: number
+    description: "indica si el beneficio se encuentra activo para el sponsor relacionado"
+    sql: ${TABLE}.active_stars ;;
+  }
+
+  dimension: first_date_additional_points {
+    hidden: yes
+    type: number
+    description: "primer fecha relacionada con el tipo de beneficio"
+    sql: ${TABLE}.first_date_additional_points ;;
+  }
+
+  dimension: first_date_base_points {
+    hidden: yes
+    type: number
+    description: "primer fecha relacionada con el tipo de beneficio"
+    sql: ${TABLE}.first_date_base_points ;;
+  }
+
+  dimension: first_date_bonus {
+    hidden: yes
+    type: number
+    description: "primer fecha relacionada con el tipo de beneficio"
+    sql: ${TABLE}.first_date_bonus ;;
+  }
+
+  dimension: first_date_rewards {
+    hidden: yes
+    type: number
+    description: "primer fecha relacionada con el tipo de beneficio"
+    sql: ${TABLE}.first_date_rewards ;;
+  }
+
+  dimension: first_date_stamps {
+    hidden: yes
+    type: number
+    description: "primer fecha relacionada con el tipo de beneficio"
+    sql: ${TABLE}.first_date_stamps ;;
+  }
+
+  dimension: first_date_stars {
+    hidden: yes
+    type: number
+    description: "primer fecha relacionada con el tipo de beneficio"
+    sql: ${TABLE}.first_date_stars ;;
+  }
+
+  dimension: last_date_additional_points {
+    hidden: yes
+    type: number
+    description: "ultima fecha relacionada con el tipo de beneficio"
+    sql: ${TABLE}.last_date_additional_points ;;
+  }
+
+  dimension: last_date_base_points {
+    hidden: yes
+    type: number
+    description: "ultima fecha relacionada con el tipo de beneficio"
+    sql: ${TABLE}.last_date_base_points ;;
+  }
+
+  dimension: last_date_bonus {
+    hidden: yes
+    type: number
+    description: "ultima fecha relacionada con el tipo de beneficio"
+    sql: ${TABLE}.last_date_bonus ;;
+  }
+
+  dimension: last_date_rewards {
+    hidden: yes
+    type: number
+    description: "ultima fecha relacionada con el tipo de beneficio"
+    sql: ${TABLE}.last_date_rewards ;;
+  }
+
+  dimension: last_date_stamps {
+    hidden: yes
+    type: number
+    description: "ultima fecha relacionada con el tipo de beneficio"
+    sql: ${TABLE}.last_date_stamps ;;
+  }
+
+  dimension: last_date_stars {
+    hidden: yes
+    type: number
+    description: "ultima fecha relacionada con el tipo de beneficio"
+    sql: ${TABLE}.last_date_stars ;;
+  }
+
+  dimension_group: first_additional_points {
+    group_label: "First Dates"
+    type: time
+    description: "primer fecha relacionada con el tipo de beneficio"
+    timeframes: [date]
+    sql: DATE(${time_fap.kd_raw}) ;;
+  }
+
+  dimension_group: first_base_points {
+    group_label: "First Dates"
+    type: time
+    timeframes: [date]
+    description: "primer fecha relacionada con el tipo de beneficio"
+    sql: DATE(${time_fbp.kd_raw}) ;;
+  }
+
+  dimension_group: first_bonus {
+    group_label: "First Dates"
+    type: time
+    timeframes: [date]
+    description: "primer fecha relacionada con el tipo de beneficio"
+    sql: DATE(${time_fb.kd_raw}) ;;
+  }
+
+  dimension_group: first_rewards {
+    group_label: "First Dates"
+    type: time
+    timeframes: [date]
+    description: "primer fecha relacionada con el tipo de beneficio"
+    sql: DATE(${time_fr.kd_raw}) ;;
+  }
+
+  dimension_group: first_stamps {
+    group_label: "First Dates"
+    type: time
+    timeframes: [date]
+    description: "primer fecha relacionada con el tipo de beneficio"
+    sql: DATE(${time_fs.kd_raw}) ;;
+  }
+
+  dimension_group: first_stars {
+    group_label: "First Dates"
+    type: time
+    timeframes: [date]
+    description: "primer fecha relacionada con el tipo de beneficio"
+    sql: DATE(${time_fst.kd_raw}) ;;
+  }
+
+  dimension_group: last_additional_points {
+    group_label: "Last Dates"
+    type: time
+    timeframes: [date]
+    description: "ultima fecha relacionada con el tipo de beneficio"
+    sql: DATE(${time_lap.kd_raw}) ;;
+  }
+
+  dimension_group: last_base_points {
+    group_label: "Last Dates"
+    type: time
+    timeframes: [date]
+    description: "ultima fecha relacionada con el tipo de beneficio"
+    sql: DATE(${time_lbp.kd_raw}) ;;
+  }
+
+  dimension_group: last_bonus {
+    group_label: "Last Dates"
+    type: time
+    timeframes: [date]
+    description: "ultima fecha relacionada con el tipo de beneficio"
+    sql: DATE(${time_lb.kd_raw}) ;;
+  }
+
+  dimension_group: last_rewards {
+    group_label: "Last Dates"
+    type: time
+    timeframes: [date]
+    description: "ultima fecha relacionada con el tipo de beneficio"
+    sql: DATE(${time_lr.kd_raw}) ;;
+  }
+
+  dimension_group: last_stamps {
+    group_label: "Last Dates"
+    type: time
+    timeframes: [date]
+    description: "ultima fecha relacionada con el tipo de beneficio"
+    sql: DATE(${time_ls.kd_raw}) ;;
+  }
+
+  dimension_group: last_stars {
+    group_label: "Last Dates"
+    type: time
+    timeframes: [date]
+    description: "ultima fecha relacionada con el tipo de beneficio"
+    sql: DATE(${time_lst.kd_raw}) ;;
+  }
+
+}
